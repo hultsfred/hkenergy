@@ -3,11 +3,9 @@ import pendulum
 from hkfunctions.api import exception, create_logger_db, send_mail
 import traceback
 from energi._PRIVATE_ENERGI import PASSWORD_LOS, KEY, LOS, USER
-from energi._PRIVATE_DB import SERVER, DB, TABLE_LOG, USER_DB, PASSWORD_DB, KEY_DB
+from energi._PRIVATE_DB import SERVER, DB, TABLE_LOG, USER_DB, PASSWORD_DB, KEY_DB, TABLE_LOS
 from cryptography.fernet import Fernet
 import pymssql
-
-from energi._PRIVATE_DB import SERVER_dev, DB_dev, TABLE_dev_los, USER_dev, PW_dev
 
 MAILSERVER = 'hks-mgw.hultsfred.se'
 FROM_ = 'energi_integration@hultsfred.se'
@@ -32,7 +30,7 @@ CONN_LOG = pymssql.connect(SERVER, USER_DB, PW_DB, DB)
 CURSOR_LOG = CONN_LOG.cursor()
 
 
-#@exception(create_logger_db(CONN_LOG, CURSOR_LOG, TABLE_LOG, 'energi_los'))
+@exception(create_logger_db(CONN_LOG, CURSOR_LOG, TABLE_LOG, 'energi_los'))
 def main():
     try:
         en = Energi(
@@ -45,26 +43,26 @@ def main():
             month=MONTH,
             datasource=DATASOURCE,
             headless=HEADLESS)
-        #en.los_cost()
+        en.los_cost()
         data = en.los_cost_transform()
         en.db_insert(
             data=data,
-            server=SERVER_dev,
-            db=DB_dev,
-            table=TABLE_dev_los,
-            user=USER_dev,
-            pw=PW_dev,
+            server=SERVER,
+            db=DB,
+            table=TABLE_LOS,
+            user=USER_DB,
+            pw=PW_DB,
             truncate=TRUNCATE,
             controlForDuplicates=CONTROLDUPLICATES)
-        #en.clean_folder()
+        en.clean_folder()
     except Exception:
-        #send_mail(
-        #    MAILSERVER,
-        #    FROM_,
-        #    TO,
-        #    SUBJECT,
-        #    messageHeader=MESSAGEHEADER,
-        #    messageBody=traceback.format_exc())
+        send_mail(
+            MAILSERVER,
+            FROM_,
+            TO,
+            SUBJECT,
+            messageHeader=MESSAGEHEADER,
+            messageBody=traceback.format_exc())
         raise
 
 
