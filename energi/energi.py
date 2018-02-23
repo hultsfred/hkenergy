@@ -411,7 +411,8 @@ class Energi():
         try:
             driver = webdriver.Firefox(
                 executable_path=self.driverPath,
-                firefox_profile=self.firefox_profile)
+                firefox_profile=self.firefox_profile,
+                options=self.opts)
             driver.get(self.adress)
             ts(5)
             #time.sleep(2)
