@@ -24,8 +24,14 @@ class Energi():
     driverPath: str = r'.\webdriver\geckodriver.exe'
 
     def __init__(self, workingDir: str, **kwargs) -> None:
-        """
-
+        """initializes the class
+        
+        :param workingDir: working directory
+        :type workingDir: str
+        :param **kwargs: different key value pair
+        :type **kwargs: str, int
+        :raises IOError: wrong downloadpath is given
+        :raises KeyError: Incorrect keyword/s har given
         """
         os.chdir(workingDir)
         self.adress: str = kwargs.pop('adress', None)
@@ -175,8 +181,7 @@ class Energi():
             raise
 
     def eon_cost(self):
-        """
-
+        """downloads file with costs from eon
         """
         year = self.year
         month = self.month
@@ -264,9 +269,10 @@ class Energi():
             raise
 
     def los_cost(self):
-        """
+        """Downloads costs from los
         
         """
+
         if self.month < 10:
             m = str('0' + str(self.month))
             from_ = str(self.year) + '-' + m
@@ -320,8 +326,8 @@ class Energi():
             raise
 
     def eon_consumption_transform(self) -> List[Tuple[Any, ...]]:
-        """
-        transforms data downloaded by method eon_consumption to fit database.
+        """transforms data downloaded by method eon_consumption to fit database.
+        
         """
         p: Path = Path(self.downloadPath)
         _fileList: List[Path] = list(p.glob('**/*.xlsx'))
@@ -350,8 +356,8 @@ class Energi():
         return data
 
     def eon_cost_transform(self):
-        """
-        transforms eon cost data
+        """transforms eon cost data
+        
         """
         p = Path(self.downloadPath)
         file = list(p.glob('**/*.xlsx'))
@@ -405,8 +411,8 @@ class Energi():
         return data
 
     def meta(self):
-        """
-        downloads metadata from eon
+        """downloads metadata from eon
+
         """
         try:
             driver = webdriver.Firefox(
@@ -467,7 +473,7 @@ class Energi():
             raise
 
     def meta_transform(self):
-        """
+        """transforms meta data
 
         """
         p = Path(self.downloadPath)
@@ -500,8 +506,8 @@ class Energi():
         return data
 
     def los_cost_transform(self):
-        """
-        data transformation of los excel file. 
+        """data transformation of los excel file. 
+        
         """
         p = Path(self.downloadPath)
         _file = list(p.glob('**/*.xls*'))
@@ -560,10 +566,26 @@ class Energi():
                   table: str,
                   user: str,
                   pw: str,
-                  truncate: bool = False,
-                  controlForDuplicates: bool = True) -> None:
-        """
-        inserts data into database        
+                  truncate: bool=False,
+                  controlForDuplicates: bool=True) -> None:
+        """inserts data into database 
+        
+        :param data: data to insert into database.
+        :type data: List[Tuple[Any, ...]]
+        :param server: Name of server
+        :type server: str
+        :param db: Name of database
+        :type db: str
+        :param table: Name of table
+        :type table: str
+        :param user: name of user to login to database
+        :type user: str
+        :param pw: Password to db for user
+        :type pw: str
+        :param truncate: if table in database should be truncated, optional, defaults to False
+        :type truncate: bool
+        :param controlForDuplicates: if True the fucntion controles for duplicates in table, optional, defaults to True
+        :type data: bool
         """
         _truncate: str
         query: Optional[str] = None
@@ -617,12 +639,12 @@ class Energi():
         # TODO: skriv en metod som returnar 2 queries om start och end skiljer sig
         pass
 
-    def clean_folder(self,
-                     destinationFolder: str = None,
-                     fullPath: bool = False) -> None:
-        """
-        Deletes all files in given dir or moves them to another dir.
+    def clean_folder(self, destinationFolder: str = None) -> None:
+        """Deletes all files in given dir or moves them to another dir.
         To move to another dir ther parameter destinationFolder must be specified.
+        
+        :param destinationFolder: folder to put data. If None the file will be erased, defaults to None.
+        :type destinationFolder: str
         """
         p: Path
         path_content: List[Path]
