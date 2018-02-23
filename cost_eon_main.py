@@ -13,10 +13,14 @@ PW_EON = Fernet(KEY).decrypt(PASSWORD_EON).decode('utf8')
 
 YEAR = pendulum.now().subtract(months=1).year
 MONTH = pendulum.now().subtract(months=1).month
-DOWNLOAPATH = r'\\vfiler-adm\USER$\hemkatalog\hesu\Projekt\Python\energi\data_cost'
-DESTINATIONPATH = r'\\vfiler-adm\USER$\hemkatalog\hesu\Projekt\Python\energi\data_cost_old'
+DOWNLOAPATH = 'data_cost'
+DESTINATIONPATH = 'data_cost_old'
 DATASOURCE = 'eon_cost'
 MESSAGEHEADER = 'eon cost'
+WORKINGDIR = '.'
+HEADLESS = True
+TRUNCATE = False
+CONTROLDUPLICATES = True
 
 CONN_LOG = pymssql.connect(SERVER, USER_DB, PW_DB, DB)
 CURSOR_LOG = CONN_LOG.cursor()
@@ -27,17 +31,27 @@ CURSOR_LOG = CONN_LOG.cursor()
 def main():
     try:
         en = Energi(
+            workingDir=WORKINGDIR,
             adress=EON,
             user=USER,
             pw=PW_EON,
             downloadPath=DOWNLOAPATH,
             year=YEAR,
             month=MONTH,
-            datasource=DATASOURCE)
+            datasource=DATASOURCE,
+            headless=HEADLESS)
         en.eon_cost()
         data = en.eon_cost_transform()
         #print(len(data))
-        en.db_insert(data, SERVER, DB, TABLE_EON_COST, USER_DB, PW_DB)
+        en.db_insert(
+                    data=data,
+                    server=SERVER,
+                    db=DB,
+                    table=TABLE_EON_COST,
+                    user=USER_DB,
+                    pw=PW_DB,
+                    truncate=TRUNCATE,
+                    controlForDuplicates=CONTROLDUPLICATES)
         en.clean_folder()
     except Exception:
         send_mail(
