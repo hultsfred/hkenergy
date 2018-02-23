@@ -42,7 +42,6 @@ def main():
             headless=HEADLESS)
         en.eon_cost()
         data = en.eon_cost_transform()
-        #print(len(data))
         en.db_insert(
                     data=data,
                     server=SERVER,

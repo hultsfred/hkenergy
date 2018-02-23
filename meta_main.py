@@ -53,13 +53,13 @@ def main():
                     controlForDuplicates=CONTROLDUPLICATES)
         en.clean_folder()
     except Exception:
-    #    send_mail(
-    #        MAILSERVER,
-    #        FROM_,
-    #        TO,
-    #        SUBJECT,
-    #        messageHeader=MESSAGEHEADER,
-    #        messageBody=traceback.format_exc())
+        send_mail(
+            MAILSERVER,
+            FROM_,
+            TO,
+            SUBJECT,
+            messageHeader=MESSAGEHEADER,
+            messageBody=traceback.format_exc())
         raise
 
 
