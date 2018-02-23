@@ -25,9 +25,9 @@ CONTROLDUPLICATES = True
 CONN_LOG = pymssql.connect(SERVER, USER_DB, PW_DB, DB)
 CURSOR_LOG = CONN_LOG.cursor()
 
-#@exception(
-#    create_logger_db(CONN_LOG, CURSOR_LOG, TABLE_LOG,
-#    'energi_meta'))
+@exception(
+    create_logger_db(CONN_LOG, CURSOR_LOG, TABLE_LOG,
+    'energi_meta'))
 def main():
     try:
         en = Energi(
