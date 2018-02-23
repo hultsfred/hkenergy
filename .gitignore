@@ -1,0 +1,15 @@
+data_cost/*
+data_cost_old/*
+data_meta/*
+data_,eta_old/*
+.mypy_cache/*
+.vscode/*
+webdriver/*
+*.xls*
+energi_flow.txt
+energi/_PRIVATE*
+*.log
+ipynb/*
+mall/*
+*/__pycache__/*
+*/OLD/*

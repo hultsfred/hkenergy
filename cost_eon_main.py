@@ -1,0 +1,54 @@
+from energi.energi import Energi
+import pendulum
+from hkfunctions.api import exception, create_logger_db, send_mail
+import traceback
+from energi._PRIVATE_ENERGI import PASSWORD_EON, KEY, EON, USER
+from energi._PRIVATE_DB import SERVER, DB, TABLE_LOG, USER_DB, PASSWORD_DB, KEY_DB, TABLE_EON_COST
+from energi._PRIVATE_MAIL import MAILSERVER, FROM_, TO, SUBJECT
+from cryptography.fernet import Fernet
+import pymssql
+
+PW_DB = Fernet(KEY_DB).decrypt(PASSWORD_DB).decode('utf8')
+PW_EON = Fernet(KEY).decrypt(PASSWORD_EON).decode('utf8')
+
+YEAR = pendulum.now().subtract(months=1).year
+MONTH = pendulum.now().subtract(months=1).month
+DOWNLOAPATH = r'\\vfiler-adm\USER$\hemkatalog\hesu\Projekt\Python\energi\data_cost'
+DESTINATIONPATH = r'\\vfiler-adm\USER$\hemkatalog\hesu\Projekt\Python\energi\data_cost_old'
+DATASOURCE = 'eon_cost'
+MESSAGEHEADER = 'eon cost'
+
+CONN_LOG = pymssql.connect(SERVER, USER_DB, PW_DB, DB)
+CURSOR_LOG = CONN_LOG.cursor()
+
+@exception(
+    create_logger_db(CONN_LOG, CURSOR_LOG, TABLE_LOG,
+    'energi_cost_eon'))
+def main():
+    try:
+        en = Energi(
+            adress=EON,
+            user=USER,
+            pw=PW_EON,
+            downloadPath=DOWNLOAPATH,
+            year=YEAR,
+            month=MONTH,
+            datasource=DATASOURCE)
+        en.eon_cost()
+        data = en.eon_cost_transform()
+        #print(len(data))
+        en.db_insert(data, SERVER, DB, TABLE_EON_COST, USER_DB, PW_DB)
+        en.clean_folder()
+    except Exception:
+        send_mail(
+            MAILSERVER,
+            FROM_,
+            TO,
+            SUBJECT,
+            messageHeader=MESSAGEHEADER,
+            messageBody=traceback.format_exc())
+        raise
+
+
+if __name__ == '__main__':
+    main()

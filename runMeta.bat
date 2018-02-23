@@ -1,0 +1,1 @@
+C:\ProgramData\Miniconda3\envs\energi\python.exe F:\Projekt\energi\meta_main.py

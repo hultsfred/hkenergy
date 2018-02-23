@@ -1,0 +1,1 @@
+The purpose of this project is to download energydata from different webpages, transform the data and insert it into a database. The code i written to fit the needs of Hultsfreds kommun but with some changes it should be possible to use the project for other companies.
