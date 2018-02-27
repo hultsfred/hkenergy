@@ -13,3 +13,4 @@ ipynb/*
 mall/*
 */__pycache__/*
 */OLD/*
+*.pbix
