@@ -1,7 +1,7 @@
 data_cost/*
 data_cost_old/*
 data_meta/*
-data_,eta_old/*
+data_meta_old/*
 .mypy_cache/*
 .vscode/*
 webdriver/*
