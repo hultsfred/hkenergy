@@ -3,7 +3,6 @@ import numpy as np
 from hkfunctions.api import mssql_insert
 from typing import Union, List, Tuple, Any, Optional
 
-PATH = './mall/test_Drift_2018.xlsx'  # korrigera denna, sätt korrekt path
 
 class ENERGI_OSK():
     """
@@ -41,12 +40,21 @@ class ENERGI_OSK():
             'Pellets',
             'Briketter',
         ]
+        self.columns: list = [
+            'Period',
+            'ObjektId',
+            'Media',
+            'Typ',
+            'Information',
+            'Enhet',
+            'Förbrukning',
+        ]
         self._columns: list = [
             'År',
             'Period',
             'ObjektId',
             'Id',
-            'Förbrukning',            
+            'Förbrukning',
             'Media',
             'Typ',
         ]
@@ -61,10 +69,13 @@ class ENERGI_OSK():
         }
 
     def getFact(self) -> List[Tuple[Any, ...]]:
-        """
+        """gets data from the given excel file and transform it
         
+        :return: A 
+        :rtype: list
         """
-        xl = pd.ExcelFile(self.path)
+
+        xl = pd.ExcelFile(self.path, convertes={'År': str, 'Period': str})
         data = xl.parse(self.sheet_FactData)
         data.drop(
             [
@@ -94,10 +105,20 @@ class ENERGI_OSK():
         _str = ':'
         df.Id = df.Id.apply(
             lambda i: i[i.find(_str) + 2:])  # tar bort onödig text
-        df = df[self._columns].reset_index(
-            drop=True
-        )  # en bugg i pandas hgör att kolumnerna kastas om när append används, detta korrigerar detta
         df['Förbrukning'] = np.round(df['Förbrukning'].astype(float), 2)
+        df['År'] = df['År'].astype(int).astype(str)
+        df['Period'] = df['År'] + '-' + df['Period'].astype(int).astype(
+            str).apply(lambda x: x if len(x) == 2 else '0' + x)
+        df.drop('År', axis=1, inplace=True)
+        df['ObjektId'] = df['ObjektId'].astype(int).astype(str)
+        df['Enhet'] = df['Id'].apply(lambda i: i[i.find(' ') + 1:].lower())
+        df['Information'] = df['Id'].apply(
+            lambda i: i[:i.find(' ') + 1].lower() if len(i[:i.find(' ') + 1]) > 0 else None
+        )
+        df = df.where(pd.notnull(df), None)
+        df = df[self.columns].reset_index(
+            drop=True
+        )
         fact = [tuple(i) for i in df.values.tolist()]
         return fact
 
@@ -138,9 +159,3 @@ class ENERGI_OSK():
             user=user,
             password=pw,
             truncate=truncate)
-
-
-if __name__ == '__main__':
-    osk = ENERGI_OSK(path=PATH)
-    print(osk.getFact())
-    print(osk._columns)
