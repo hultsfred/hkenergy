@@ -4,10 +4,9 @@ from hkfunctions.api import mssql_insert
 from typing import Union, List, Tuple, Any, Optional
 
 
-class ENERGI_OSK():
-    """
-    this class consists of methods that are used to extract, wrangle and insert data into a db from an excelfile in which
-    ÖSK enters energy data 
+class ENERGI_XL():
+    """ this class consists of methods that are used to extract, wrangle and insert data into a db from excelfiles in which
+    ÖSK enters energy data, HKIAB enters metadata
     """
 
     def __init__(self, path: str) -> None:
@@ -139,6 +138,16 @@ class ENERGI_OSK():
 
         """
         pass
+
+    def getHkiabMeta(self) -> List[Tuple[Any, ...]]:
+        """[summary]
+        
+        """
+        df = pd.read_excel(self.path, skiprows=9)
+        df['Anläggnings id'] = df['Anläggnings id'].astype(str).apply(lambda x: x.replace(' ', ''))
+        df = df[['Anläggnings id', 'Fastighet', 'Adress']].dropna(axis=0, how="any")
+        fact = [tuple(i) for i in df.values.tolist()]
+        return fact
 
     def db_insert(self,
                   data: List[Tuple[Any, ...]],
