@@ -3,9 +3,10 @@ name: energi
 dependencies:
   - python=3.6
   - pandas
+  - pylint
   - pip:
     - selenium
     - pendulum
-    - ./wheels-to-install/hkfunctions-0.4.2-py3-none-any.whl
+    - ./wheels-to-install/hkfunctions-0.6.0-py3-none-any.whl
     - ./wheels-to-install/pymssql-2.1.3-cp36-cp36m-win_amd64.whl
 
