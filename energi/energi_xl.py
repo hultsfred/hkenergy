@@ -115,9 +115,7 @@ class ENERGI_XL():
             lambda i: i[:i.find(' ') + 1].lower() if len(i[:i.find(' ') + 1]) > 0 else None
         )
         df = df.where(pd.notnull(df), None)
-        df = df[self.columns].reset_index(
-            drop=True
-        )
+        df = df[self.columns].reset_index(drop=True)
         fact = [tuple(i) for i in df.values.tolist()]
         return fact
 
@@ -144,8 +142,35 @@ class ENERGI_XL():
         
         """
         df = pd.read_excel(self.path, skiprows=9)
-        df['Anläggnings id'] = df['Anläggnings id'].astype(str).apply(lambda x: x.replace(' ', ''))
-        df = df[['Anläggnings id', 'Fastighet', 'Adress']].dropna(axis=0, how="any")
+        df = df[['Anläggnings id', 'Fastighet', 'Adress',
+                 'Anmärkning']].dropna(
+                     axis=0, how="all")
+        df['Anläggnings id'] = df['Anläggnings id'].astype(str).apply(
+            lambda x: x.replace(' ', ''))
+        df = df.where(pd.notnull(df), None)
+        fact = [tuple(i) for i in df.values.tolist()]
+        return fact
+
+    def getOskMeta(self) -> List[Tuple[Any, ...]]:
+        """[summary]
+        
+        :return: [description]
+        :rtype: List[Tuple[Any, ...]]
+        """
+        CONVERTERS = {
+            'Säkring': str,
+            'Referens 1': str,
+            'Elområde': str,
+            'Faktura GLN': str,
+            'Kndnr E.ON (nät)': str,
+        }
+        df = pd.read_excel(self.path, converters=CONVERTERS)
+        df['Anläggningsid'] = df['Anläggningsid'].astype(str).apply(
+            lambda x: x.replace(' ', ''))
+        ortid = df['Avdelning'].apply(lambda x: x[x.find('-')+2:])
+        df['Avdelning'] = df['Avdelning'].apply(lambda x: x[:x.find('-')-1])
+        df.insert(loc=1, column='Ortid', value=ortid)
+        df = df.where(pd.notnull(df), None)
         fact = [tuple(i) for i in df.values.tolist()]
         return fact
 
