@@ -488,9 +488,7 @@ class Energi():
                 f'The folder {self.downloadPath} is empty. Is there an error when downloading the file?'
             )
         meta_eon = pd.read_excel(
-            file, skiprows=9, converters={
-                'Anläggnings-ID ': str
-            })
+            file, skiprows=9, converters={'Anläggnings-ID ': str,})
         meta_eon.dropna(axis=1, how='all', inplace=True)
         #meta_eon = meta_eon[meta_eon['Mätmetod '] == 'Tim']
         column_order = [
@@ -542,22 +540,26 @@ class Energi():
         data.columns = cols
         data.reset_index(drop=True, inplace=True)
         data = data.copy()
-        data['Avläsningsdatum1'] = pd.to_datetime(
-            data['Avläsningsdatum1'], yearfirst=True).astype(str)
-        data['Avläsningsdatum2'] = pd.to_datetime(
-            data['Avläsningsdatum2'], yearfirst=True).astype(str)
-        data['Startdatum'] = pd.to_datetime(
-            data['Startdatum'], yearfirst=True).astype(str)
-        data['Slutdatum'] = data['Slutdatum'].apply(lambda x: (str(x)[:10]))
-        data['Kundnummer'] = data['Kundnummer'].astype(
-            str
-        )  # must be set as a string, else pymssql tries to insert it as int
-        data['LOS Energy-nummer'] = data['LOS Energy-nummer'].astype(str)
-        data['Org_nr'] = data['Org_nr'].astype(str)
-        data['Ediel-ID Nätägare'] = data['Ediel-ID Nätägare'].astype(str)
-        data_cl = data.where(pd.notnull(data), None)
-        data = [tuple(i) for i in data_cl.values.tolist()]
-        return data
+        if data['Summa (kr)'].sum() == 0:
+            return
+        else:
+            data['Avläsningsdatum1'] = pd.to_datetime(
+                data['Avläsningsdatum1'], yearfirst=True).astype(str)
+            data['Avläsningsdatum2'] = pd.to_datetime(
+                data['Avläsningsdatum2'], yearfirst=True).astype(str)
+            data['Startdatum'] = pd.to_datetime(
+                data['Startdatum'], yearfirst=True).astype(str)
+            data['Slutdatum'] = data['Slutdatum'].apply(
+                lambda x: (str(x)[:10]))
+            data['Kundnummer'] = data['Kundnummer'].astype(
+                str
+            )  # must be set as a string, else pymssql tries to insert it as int
+            data['LOS Energy-nummer'] = data['LOS Energy-nummer'].astype(str)
+            data['Org_nr'] = data['Org_nr'].astype(str)
+            data['Ediel-ID Nätägare'] = data['Ediel-ID Nätägare'].astype(str)
+            data_cl = data.where(pd.notnull(data), None)
+            data = [tuple(i) for i in data_cl.values.tolist()]
+            return data
 
     def db_insert(self,
                   data: List[Tuple[Any, ...]],
@@ -566,8 +568,8 @@ class Energi():
                   table: str,
                   user: str,
                   pw: str,
-                  truncate: bool=False,
-                  controlForDuplicates: bool=True) -> None:
+                  truncate: bool = False,
+                  controlForDuplicates: bool = True) -> None:
         """inserts data into database 
         
         :param data: data to insert into database.
@@ -587,6 +589,8 @@ class Energi():
         :param controlForDuplicates: if True the fucntion controles for duplicates in table, optional, defaults to True
         :type data: bool
         """
+        if not data:
+            return
         _truncate: str
         query: Optional[str] = None
         if truncate:
