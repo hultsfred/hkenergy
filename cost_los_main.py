@@ -4,6 +4,7 @@ from hkfunctions.api import exception, create_logger_db, send_mail
 import traceback
 from energi._PRIVATE_ENERGI import PASSWORD_LOS, KEY, LOS, USER
 from energi._PRIVATE_DB import SERVER, DB, TABLE_LOG, USER_DB, PASSWORD_DB, KEY_DB, TABLE_LOS
+from energi._config import HEADLESS
 from cryptography.fernet import Fernet
 import pymssql
 
@@ -22,9 +23,9 @@ FOLDER2 = 'data_cost_old'
 DATASOURCE = 'los'
 MESSAGEHEADER = 'LOS'
 WORKINGDIR = '.'
-HEADLESS = True
 TRUNCATE = False
 CONTROLDUPLICATES = True
+headless = HEADLESS
 
 CONN_LOG = pymssql.connect(SERVER, USER_DB, PW_DB, DB)
 CURSOR_LOG = CONN_LOG.cursor()
@@ -43,7 +44,7 @@ def main():
             year=YEAR,
             month=MONTH,
             datasource=DATASOURCE,
-            headless=HEADLESS)
+            headless=headless)
         en.los_cost()
         data = en.los_cost_transform()
         en.db_insert(

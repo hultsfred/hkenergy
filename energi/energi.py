@@ -4,15 +4,18 @@ from pathlib import Path
 from decimal import Decimal
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
-from selenium.common.exceptions import (NoSuchElementException,
-                                        UnexpectedAlertPresentException,
-                                        InvalidElementStateException)
+from selenium.common.exceptions import (
+    NoSuchElementException,
+    UnexpectedAlertPresentException,
+    InvalidElementStateException,
+    ElementClickInterceptedException,
+)
 from selenium.webdriver.common.keys import Keys
 import time
 import pandas as pd
 from hkfunctions.api import mssql_insert, mssql_query
 from energi._eon_info import years
-from typing import Union, List, Tuple, Any, Optional
+from typing import Union, List, Tuple, Any, Optional, Dict
 ts = time.sleep
 
 
@@ -56,7 +59,7 @@ class Energi():
         fp.set_preference("browser.preferences.instantApply", True)
         fp.set_preference(
             "browser.helperApps.neverAsk.saveToDisk",
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/octet-stream",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/octet-stream, text/csv",
         )
         fp.set_preference("browser.download.folderList", 2)
         fp.set_preference("browser.download.dir", self.downloadPath)
@@ -89,8 +92,12 @@ class Energi():
             # logga in
             driver.find_element_by_id("LoginButton").click()
             ts(5)
-            # väl hultsfreds kommun
-            driver.find_element_by_class_name('business-account-link').click()
+            # välj hultsfreds kommun
+            #driver.find_element_by_class_name('business-account-link').click() # HK och HKIAB har bytt plats därför måste css selector användas
+            order = 2
+            driver.find_element_by_css_selector(
+                f"body > form > div > div > div.modal-body > div.form-group > table > tbody > tr:nth-child({order}) > td > div > a"
+            ).click()
             ts(3)
             # välj analys
             driver.find_element_by_id("installation-box").click()
@@ -175,7 +182,8 @@ class Energi():
         except (NoSuchElementException, InvalidElementStateException):
             try:
                 driver.find_element_by_class_name("log-out").click()
-            except (NoSuchElementException, InvalidElementStateException):
+            except (NoSuchElementException, InvalidElementStateException,
+                    ElementClickInterceptedException):
                 pass
             driver.close()
             raise
@@ -189,7 +197,8 @@ class Energi():
         try:
             driver = webdriver.Firefox(
                 executable_path=self.driverPath,
-                firefox_profile=self.firefox_profile)
+                firefox_profile=self.firefox_profile,
+                options=self.opts)
             driver.get(self.adress)
             ts(5)
             elem1 = driver.find_element_by_id("UserIdField")
@@ -200,8 +209,12 @@ class Energi():
             # logga in
             driver.find_element_by_id("LoginButton").click()
             ts(5)
-            # väl hultsfreds kommun
-            driver.find_element_by_class_name('business-account-link').click()
+            # välj hultsfreds kommun
+            #driver.find_element_by_class_name('business-account-link').click() # HK och HKIAB har bytt plats därför måste css selector användas
+            order = 2
+            driver.find_element_by_css_selector(
+                f"body > form > div > div > div.modal-body > div.form-group > table > tbody > tr:nth-child({order}) > td > div > a"
+            ).click()
             ts(3)
             # välj ekonomi
             driver.find_element_by_xpath(
@@ -241,18 +254,23 @@ class Energi():
                 f'/html/body/div[6]/div[2]/table/tbody/tr/td/span[{month}]'
             ).click()
             ts(3)
+            # sök => applicera valda månader
             driver.find_element_by_xpath(
                 '//*[@id="costs-filter"]/div[6]/div/button').click()
             ts(10)
-            driver.find_element_by_xpath(
-                'id("list-container")/div[@class="base-list"]/table[@class="table table-hover view14 sorted-7 sorted-desc"]/thead[@class="tableFloatingHeaderOriginal"]/tr[@class="header"]/th[@class="select"]/label[1]/span[1]'
+            # välj alla fastigheter
+            driver.find_element_by_css_selector(
+                "#list-container > div.base-list > table > thead.tableFloatingHeaderOriginal > tr > th.select > label > span"
             ).click()
             ts(5)
-            driver.find_element_by_xpath(
-                '//*[@id="list-container"]/div[1]/div/div/button').click()
+            # öpnna menyn "Öppna i..."
+            driver.find_element_by_css_selector(
+                "#list-container > div.row.base-list-toolbar > div > div > button"
+            ).click()
             ts(5)
-            driver.find_element_by_xpath(
-                '//*[@id="list-container"]/div[1]/div/div/div/button[1]'
+            # klicka ladda ner
+            driver.find_element_by_css_selector(
+                "#list-container > div.row.base-list-toolbar > div > div > div > button.export.btn.btn-outline.width-100"
             ).click()
             # väntar på att fil laddar ner
             Energi._check_folder(self.downloadPath)
@@ -263,7 +281,8 @@ class Energi():
         except (NoSuchElementException, InvalidElementStateException):
             try:
                 driver.find_element_by_class_name("log-out").click()
-            except (NoSuchElementException, InvalidElementStateException):
+            except (NoSuchElementException, InvalidElementStateException,
+                    ElementClickInterceptedException):
                 pass
             driver.close()
             raise
@@ -307,11 +326,11 @@ class Energi():
             end.send_keys(to)
             ts(3)
             driver.find_element_by_id('btnReload').click()
-            ts(3)
+            ts(30)
             # välj excelfil
             driver.find_element_by_id('lnkExport').click()
             #waits for file to download
-            Energi._check_folder(self.downloadPath)
+            self._check_folder(self.downloadPath)
             #ts(5)
             # logga ut
             driver.find_element_by_xpath(
@@ -324,6 +343,65 @@ class Energi():
             driver.close()
             print(exc)
             raise
+
+    def neova_consumption(self):
+        """Downloads costs from neova
+        
+        """
+        try:
+            driver = webdriver.Firefox(
+                executable_path=self.driverPath,
+                firefox_profile=self.firefox_profile,
+                options=self.opts)
+            driver.get(self.adress)
+            ts(5)
+            elem1 = driver.find_element_by_name("email")
+            elem2 = driver.find_element_by_name("password")
+            elem1.send_keys(self.user)
+            ts(3)
+            elem2.send_keys(self.pw)
+            # logga in
+            driver.find_element_by_class_name("auth0-label-submit").click()
+            ts(15)
+            self._neova_helper(driver)
+            driver.find_element_by_xpath(
+                '//*[@id="app"]/div/div/div[2]/div/div[2]/button').click()
+            driver.close()
+        except Exception:
+            driver.close()
+            raise
+
+    def _neova_helper(self, driver: webdriver) -> None:
+        """[summary]
+        """
+        # farligt med att namnge filerna utifrpn ordningen i listan på webben. denna kan ändras. Bättre om metadata fanns i csvfilen.
+        neova_anläggningar: Dict = {
+            'Mimer_7':
+            '//*[@id="app"]/div/div/div[1]/div[2]/div[1]/nav/div/div[2]/div/ul/li[2]/div[2]',
+            'Läroverket_Stålhagskolan':
+            '//*[@id="app"]/div/div/div[1]/div[2]/div[1]/nav/div/div[2]/div/ul/li[3]/div[2]',
+            'Smeden_8':
+            '//*[@id="app"]/div/div/div[1]/div[2]/div[1]/nav/div/div[2]/div/ul/li[4]/div[2]',
+            'Solvändan_2':
+            '//*[@id="app"]/div/div/div[1]/div[2]/div[1]/nav/div/div[2]/div/ul/li[5]/div[1]',
+            'Läroverket_C_huset':
+            '//*[@id="app"]/div/div/div[1]/div[2]/div[1]/nav/div/div[2]/div/ul/li[6]/div[2]'
+        }
+
+        for key, value in neova_anläggningar.items():
+            driver.find_element_by_class_name(
+                "usage-place-bar__button").click()
+            ts(5)
+            driver.find_element_by_xpath(value).click()
+            ts(5)
+            driver.find_element_by_class_name(
+                'usage-place-menu__close').click()
+            ts(2)
+            #ladda ner csv
+            driver.find_element_by_xpath(
+                '//*[@id="base__content"]/div[2]/div[1]/div[7]/a').click()
+            ts(5)
+            self._rename_file(facility=key)
 
     def eon_consumption_transform(self) -> List[Tuple[Any, ...]]:
         """transforms data downloaded by method eon_consumption to fit database.
@@ -488,7 +566,9 @@ class Energi():
                 f'The folder {self.downloadPath} is empty. Is there an error when downloading the file?'
             )
         meta_eon = pd.read_excel(
-            file, skiprows=9, converters={'Anläggnings-ID ': str,})
+            file, skiprows=9, converters={
+                'Anläggnings-ID ': str,
+            })
         meta_eon.dropna(axis=1, how='all', inplace=True)
         #meta_eon = meta_eon[meta_eon['Mätmetod '] == 'Tim']
         column_order = [
@@ -705,3 +785,13 @@ class Energi():
         else:
             query = None
         return query
+
+    def _rename_file(self, facility: str):
+        """helper method that renames given file
+        """
+        folder: Path = Path(self.downloadPath)
+        files: List = list(folder.glob('*.csv'))
+        latest_file: str = max(files, key=os.path.getctime)
+        name: str = facility + '.csv'
+        Path(latest_file).replace(folder / name)
+        print(latest_file)

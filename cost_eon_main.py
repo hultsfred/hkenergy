@@ -5,6 +5,7 @@ import traceback
 from energi._PRIVATE_ENERGI import PASSWORD_EON, KEY, EON, USER
 from energi._PRIVATE_DB import SERVER, DB, TABLE_LOG, USER_DB, PASSWORD_DB, KEY_DB, TABLE_EON_COST
 from energi._PRIVATE_MAIL import MAILSERVER, FROM_, TO, SUBJECT
+from energi._config import HEADLESS
 from cryptography.fernet import Fernet
 import pymssql
 
@@ -18,16 +19,16 @@ DESTINATIONPATH = 'data_cost_old'
 DATASOURCE = 'eon_cost'
 MESSAGEHEADER = 'eon cost'
 WORKINGDIR = '.'
-HEADLESS = True
 TRUNCATE = False
 CONTROLDUPLICATES = True
+headless = HEADLESS
 
 CONN_LOG = pymssql.connect(SERVER, USER_DB, PW_DB, DB)
 CURSOR_LOG = CONN_LOG.cursor()
 
+
 @exception(
-    create_logger_db(CONN_LOG, CURSOR_LOG, TABLE_LOG,
-    'energi_cost_eon'))
+    create_logger_db(CONN_LOG, CURSOR_LOG, TABLE_LOG, 'energi_cost_eon'))
 def main():
     try:
         en = Energi(
@@ -39,18 +40,18 @@ def main():
             year=YEAR,
             month=MONTH,
             datasource=DATASOURCE,
-            headless=HEADLESS)
+            headless=headless)
         en.eon_cost()
         data = en.eon_cost_transform()
         en.db_insert(
-                    data=data,
-                    server=SERVER,
-                    db=DB,
-                    table=TABLE_EON_COST,
-                    user=USER_DB,
-                    pw=PW_DB,
-                    truncate=TRUNCATE,
-                    controlForDuplicates=CONTROLDUPLICATES)
+            data=data,
+            server=SERVER,
+            db=DB,
+            table=TABLE_EON_COST,
+            user=USER_DB,
+            pw=PW_DB,
+            truncate=TRUNCATE,
+            controlForDuplicates=CONTROLDUPLICATES)
         en.clean_folder()
     except Exception:
         send_mail(
