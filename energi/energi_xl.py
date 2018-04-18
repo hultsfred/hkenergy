@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from hkfunctions.api import mssql_insert
-from typing import Union, List, Tuple, Any, Optional
+from typing import Union, List, Tuple, Any, Optional, Dict
 
 
 class ENERGI_XL():
@@ -18,54 +18,9 @@ class ENERGI_XL():
         """
         self.path = path
         self.sheet_FactData: str = 'Sammanställning'
-        self.sheet_ElectricityMeta = ''
-        self.sheet_EstateMeta = ''
-        self.sheet_SubsidiaryEstateMeta = ''
-        self.MEDIA: list = [
-            ['Fjärrvärme: Mätarställning Mwh', 'Fjärrvärme: Flöde'],
-            ['Flis: Lev. m3'],
-            ['Vatten: Mätarställning m3', 'Vatten: Typ'],
-            ['El: Mätarställning kwh'],
-            ['Olja: Liter', 'Olja: Typ'],
-            ['Pellets: Avläsning'],
-            ['Briketter: Avläsning'],
-        ]
-        self._TYPE_MEDIA: list = [
-            'Fjärrvärme',
-            'Flis',
-            'Vatten',
-            'El',
-            'Olja',
-            'Pellets',
-            'Briketter',
-        ]
-        self.columns: list = [
-            'Period',
-            'ObjektId',
-            'Media',
-            'Typ',
-            'Information',
-            'Enhet',
-            'Förbrukning',
-        ]
-        self._columns: list = [
-            'År',
-            'Period',
-            'ObjektId',
-            'Id',
-            'Förbrukning',
-            'Media',
-            'Typ',
-        ]
-        self.general_columns: list = [
-            'År',
-            'Period',
-            'ObjektId',
-        ]
-        self.extra_id_vars: dict = {
-            'Vatten': ['Vatten: Typ'],
-            'Olja': ['Olja: Typ'],
-        }
+        self.sheet_ElectricityMeta: str = 'ElmätareMeta'
+        self.sheet_EstateMeta = 'Fastighet'
+        self.sheet_SubsidiaryEstateMeta = 'Underobjekt'
 
     def getFact(self) -> List[Tuple[Any, ...]]:
         """gets data from the given excel file and transform it
@@ -73,16 +28,12 @@ class ENERGI_XL():
         :return: A 
         :rtype: list
         """
-
-        xl = pd.ExcelFile(self.path, convertes={'År': str, 'Period': str})
+        self._metaFact()
+        xl = pd.ExcelFile(self.path, converters={'År': str, 'Period': str})
         data = xl.parse(self.sheet_FactData)
-        data.drop(
-            [
-                'Månad',
-                'Objektnamn',
-            ], axis=1, inplace=True)
+        data.drop(self.columns_to_drop, axis=1, inplace=True)
         df = pd.DataFrame(columns=self._columns)
-        for i, j in zip(self.MEDIA, self._TYPE_MEDIA):
+        for i, j in zip(self._MEDIA, self._TYPE_MEDIA):
             cols = self.general_columns + i
             _df = data[cols]
             if j != 'Vatten' and j != 'Olja':
@@ -90,13 +41,13 @@ class ENERGI_XL():
                     _df,
                     id_vars=self.general_columns,
                     var_name='Id',
-                    value_name='Förbrukning')
+                    value_name='Värde')
             else:
                 __df = pd.melt(
                     _df,
                     id_vars=self.general_columns + self.extra_id_vars[j],
                     var_name='Id',
-                    value_name='Förbrukning')
+                    value_name='Värde')
                 __df = __df.rename(columns={self.extra_id_vars[j][0]: 'Typ'})
             __df['Media'] = j
             __df.dropna(inplace=True)
@@ -104,7 +55,7 @@ class ENERGI_XL():
         _str = ':'
         df.Id = df.Id.apply(
             lambda i: i[i.find(_str) + 2:])  # tar bort onödig text
-        df['Förbrukning'] = np.round(df['Förbrukning'].astype(float), 2)
+        df['Värde'] = np.round(df['Värde'].astype(float), 2)
         df['År'] = df['År'].astype(int).astype(str)
         df['Period'] = df['År'] + '-' + df['Period'].astype(int).astype(
             str).apply(lambda x: x if len(x) == 2 else '0' + x)
@@ -119,23 +70,19 @@ class ENERGI_XL():
         fact = [tuple(i) for i in df.values.tolist()]
         return fact
 
-    def getElectricityMeta(self) -> List[Tuple[Any, ...]]:
+    def getMeta(self, sheet: str) -> List[Tuple[Any, ...]]:
+        """[summary]
+        
+        :param sheet: [description]
+        :type sheet: str
+        :return: [description]
+        :rtype: List[Tuple[Any, ...]]
         """
-
-        """
-        pass
-
-    def getEstateMeta(self) -> List[Tuple[Any, ...]]:
-        """
-
-        """
-        pass
-
-    def getSubsidiaryEstateMeta(self) -> List[Tuple[Any, ...]]:
-        """
-
-        """
-        pass
+        xl = pd.ExcelFile(self.path)
+        df = xl.parse(sheet)
+        df = df.where(pd.notnull(df), None)
+        fact = [tuple(i) for i in df.values.tolist()]
+        return fact
 
     def getHkiabMeta(self) -> List[Tuple[Any, ...]]:
         """[summary]
@@ -167,8 +114,8 @@ class ENERGI_XL():
         df = pd.read_excel(self.path, converters=CONVERTERS)
         df['Anläggningsid'] = df['Anläggningsid'].astype(str).apply(
             lambda x: x.replace(' ', ''))
-        ortid = df['Avdelning'].apply(lambda x: x[x.find('-')+2:])
-        df['Avdelning'] = df['Avdelning'].apply(lambda x: x[:x.find('-')-1])
+        ortid = df['Avdelning'].apply(lambda x: x[x.find('-') + 2:])
+        df['Avdelning'] = df['Avdelning'].apply(lambda x: x[:x.find('-') - 1])
         df.insert(loc=1, column='Ortid', value=ortid)
         df = df.where(pd.notnull(df), None)
         fact = [tuple(i) for i in df.values.tolist()]
@@ -193,3 +140,71 @@ class ENERGI_XL():
             user=user,
             password=pw,
             truncate=truncate)
+
+    def _metaFact(self) -> None:
+        """helper method that initializes datastructures used in getaFact function
+        """
+        self._MEDIA: List = [
+            ['Fj.värme: m.ställn. Mwh', 'Fj.värme: Flöde'],
+            ['Flis: Lev. m3'],
+            ['Vatten: m.ställn. m3', 'Vatten: Typ'],
+            ['El: m.ställn. kwh'],
+            ['Olja: Liter', 'Olja: Typ'],
+            ['Pellets: Avläsning'],
+            ['Briketter: Avläsning'],
+        ]
+        self._TYPE_MEDIA: List = [
+            'Fjärrvärme',
+            'Flis',
+            'Vatten',
+            'El',
+            'Olja',
+            'Pellets',
+            'Briketter',
+        ]
+        self.columns: List = [
+            'Period',
+            'ObjektId',
+            'Media',
+            'Typ',
+            'Information',
+            'Enhet',
+            'Värde',
+        ]
+        self._columns: List = [
+            'År',
+            'Period',
+            'ObjektId',
+            'Id',
+            'Värde',
+            'Media',
+            'Typ',
+        ]
+        self.general_columns: List = [
+            'År',
+            'Period',
+            'ObjektId',
+        ]
+        self.extra_id_vars: Dict = {
+            'Vatten': ['Vatten: Typ'],
+            'Olja': ['Olja: Typ'],
+        }
+        self.columns_to_drop: List = [
+            'Månad',
+            'Objektnamn',
+            'ID',
+            'ID föregående',
+            'ID vatten',
+            'ID vatten föregående',
+            'ID olja',
+            'ID olja föregående',
+            'Förbrukning Fj. Värme',
+            'Förändring flöde',
+            'Förbrukning flis',
+            'Förbrukning vatten',
+            'Förbrukning el',
+            'Förbrukning olja',
+            'Förbrukning pellets',
+            'Förbrukning briketter',
+        ]
+        return self
