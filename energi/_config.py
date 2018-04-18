@@ -1,0 +1,3 @@
+"""config file
+"""
+HEADLESS = True
