@@ -5,8 +5,9 @@ import traceback
 from energi._PRIVATE_ENERGI import PASSWORD_EON, KEY, EON, USER
 from energi._PRIVATE_DB import SERVER, DB, TABLE_LOG, USER_DB, PASSWORD_DB, KEY_DB, TABLE_META
 from energi._PRIVATE_MAIL import MAILSERVER, FROM_, TO, SUBJECT
+from energi._config import HEADLESS
 from cryptography.fernet import Fernet
-import pymssql 
+import pymssql
 
 PW_DB = Fernet(KEY_DB).decrypt(PASSWORD_DB).decode('utf8')
 PW_EON = Fernet(KEY).decrypt(PASSWORD_EON).decode('utf8')
@@ -18,16 +19,15 @@ FOLDER2 = 'data_meta_old'
 DATASOURCE = 'eon_meta'
 MESSAGEHEADER = 'Meta'
 WORKINGDIR = '.'
-HEADLESS = True
 TRUNCATE = True
 CONTROLDUPLICATES = True
+headless = HEADLESS
 
 CONN_LOG = pymssql.connect(SERVER, USER_DB, PW_DB, DB)
 CURSOR_LOG = CONN_LOG.cursor()
 
-@exception(
-    create_logger_db(CONN_LOG, CURSOR_LOG, TABLE_LOG,
-    'energi_meta'))
+
+@exception(create_logger_db(CONN_LOG, CURSOR_LOG, TABLE_LOG, 'energi_meta'))
 def main():
     try:
         en = Energi(
@@ -39,18 +39,18 @@ def main():
             year=YEAR,
             month=MONTH,
             datasource=DATASOURCE,
-            headless=HEADLESS)
+            headless=headless)
         en.meta()
         data = en.meta_transform()
         en.db_insert(
-                    data=data,
-                    server=SERVER,
-                    db=DB,
-                    table=TABLE_META,
-                    user=USER_DB,
-                    pw=PW_DB,
-                    truncate=TRUNCATE,
-                    controlForDuplicates=CONTROLDUPLICATES)
+            data=data,
+            server=SERVER,
+            db=DB,
+            table=TABLE_META,
+            user=USER_DB,
+            pw=PW_DB,
+            truncate=TRUNCATE,
+            controlForDuplicates=CONTROLDUPLICATES)
         en.clean_folder()
     except Exception:
         send_mail(
