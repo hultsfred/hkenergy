@@ -509,7 +509,11 @@ class Energi():
             driver.find_element_by_id("LoginButton").click()
             ts(5)
             # välj hultsfreds kommun
-            driver.find_element_by_class_name('business-account-link').click()
+            #driver.find_element_by_class_name('business-account-link').click() # HK och HKIAB har bytt plats därför måste css selector användas
+            order = 2
+            driver.find_element_by_css_selector(
+                f"body > form > div > div > div.modal-body > div.form-group > table > tbody > tr:nth-child({order}) > td > div > a"
+            ).click()
             ts(3)
             # välj Energikarta
             driver.find_element_by_xpath(
