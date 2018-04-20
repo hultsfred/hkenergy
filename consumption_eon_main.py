@@ -55,15 +55,15 @@ def main():
             pw=PW_DB,
             truncate=TRUNCATE,
             controlForDuplicates=CONTROLDUPLICATES)
-        #en.clean_folder(destinationFolder=FOLDER2)
+        en.clean_folder(destinationFolder=FOLDER2)
     except Exception:
-        #send_mail(
-        #    MAILSERVER,
-        #    FROM_,
-        #    TO,
-        #    SUBJECT,
-        #    messageHeader=MESSAGEHEADER,
-        #    messageBody=traceback.format_exc())
+        send_mail(
+            MAILSERVER,
+            FROM_,
+            TO,
+            SUBJECT,
+            messageHeader=MESSAGEHEADER,
+            messageBody=traceback.format_exc())
         raise
 
 
