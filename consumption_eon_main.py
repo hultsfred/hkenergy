@@ -4,7 +4,7 @@ import pendulum
 from hkfunctions.api import exception, create_logger_db, send_mail
 import traceback
 from energi._PRIVATE_ENERGI import PASSWORD_EON, KEY, EON, USER
-from energi._PRIVATE_DB import SERVER, DB, TABLE_LOG, USER_DB, PASSWORD_DB, KEY_DB, TABLE_CONSUMPTION
+from energi._PRIVATE_DB import SERVER, DB, TABLE_LOG, USER_DB, PASSWORD_DB, KEY_DB, TABLE_CONSUMPTION_HOURLY
 from energi._PRIVATE_MAIL import MAILSERVER, FROM_, TO, SUBJECT
 from energi._config import HEADLESS
 from cryptography.fernet import Fernet
@@ -43,18 +43,26 @@ def main():
             month=MONTH,
             datasource=DATASOURCE,
             headless=headless)
-        en.eon_consumption()
+        en.eon_consumption(hourly=True)
         data = en.eon_consumption_transform()
-        #print(data)
+        en.db_delete_records(
+            server=SERVER,
+            database=DB,
+            table=TABLE_CONSUMPTION_HOURLY,
+            user=USER_DB,
+            password=PW_DB,
+            whereClause=f"""YEAR(DATEADD(hh, -1,Timestamp)) = {en.year}
+                            AND MONTH(DATEADD(hh, -1,Timestamp)) = {en.month}"""
+        )
         en.db_insert(
             data=data,
             server=SERVER,
             db=DB,
-            table=TABLE_CONSUMPTION,
+            table=TABLE_CONSUMPTION_HOURLY,
             user=USER_DB,
             pw=PW_DB,
             truncate=TRUNCATE,
-            controlForDuplicates=CONTROLDUPLICATES)
+        )
         en.clean_folder(destinationFolder=FOLDER2)
     except Exception:
         send_mail(
