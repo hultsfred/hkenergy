@@ -15,3 +15,5 @@ mall/*
 */OLD/*
 *.pbix
 .ipynb*
+_testing*
+*.ipynb
