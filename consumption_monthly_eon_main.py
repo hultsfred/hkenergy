@@ -43,7 +43,7 @@ def main():
             month=MONTH,
             datasource=DATASOURCE,
             headless=headless)
-        #en.eon_consumption(hourly=False)
+        en.eon_consumption(hourly=False)
         data = en.eon_consumption_transform_monthly()
         en.db_delete_records(
             server=SERVER,
@@ -56,27 +56,22 @@ def main():
             data=data,
             server=SERVER,
             db=DB,
-            table=TABLE_CONSUMPTION_MONTHLY,  # fel
+            table=TABLE_CONSUMPTION_MONTHLY,
             user=USER_DB,
             pw=PW_DB,
             truncate=TRUNCATE,
         )
-        en.clean_folder(destinationFolder=FOLDER2)  # buggtesta denna
+        en.clean_folder(destinationFolder=FOLDER2)
     except Exception:
-        #send_mail(
-        #    MAILSERVER,
-        #    FROM_,
-        #    TO,
-        #    SUBJECT,
-        #    messageHeader=MESSAGEHEADER,
-        #    messageBody=traceback.format_exc())
+        send_mail(
+            MAILSERVER,
+            FROM_,
+            TO,
+            SUBJECT,
+            messageHeader=MESSAGEHEADER,
+            messageBody=traceback.format_exc())
         raise
 
-
-# TODO: as of now  it seems that this code only downloads prliminary data.
-#       Write another main that deletes the data from previous month except
-#       the first hour every month [e.g 2018-04-01 00:00:00:000] because
-#       it belongs to 2 months ago
 
 if __name__ == '__main__':
     main()
