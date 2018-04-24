@@ -13,7 +13,7 @@ from selenium.common.exceptions import (
 from selenium.webdriver.common.keys import Keys
 import time
 import pandas as pd
-from hkfunctions.api import mssql_insert, mssql_query
+from hkfunctions.api import mssql_insert
 from energi._eon_info import years
 from typing import Union, List, Tuple, Any, Optional, Dict
 ts = time.sleep
@@ -24,7 +24,7 @@ class Energi():
     This class includes methods to help download exceldata from EON and LOS
     websites.
     """
-    driverPath: str = r'.\webdriver\geckodriver.exe'
+    _driverPath: str = r'.\webdriver\geckodriver.exe'
 
     def __init__(self, workingDir: str, **kwargs) -> None:
         """initializes the class
@@ -33,23 +33,23 @@ class Energi():
         :type workingDir: str
         :param **kwargs: different key value pair
         :type **kwargs: str, int
-        :raises IOError: wrong downloadpath is given
+        :raises IOError: wrong downloadPath is given
         :raises KeyError: Incorrect keyword/s har given
         """
         os.chdir(workingDir)
-        self.adress: str = kwargs.pop('adress', None)
-        self.user: str = kwargs.pop('user', None)
-        self.pw: str = kwargs.pop('pw', None)
-        if not kwargs.pop('fullDownloadPath', False):
-            self.downloadPath: str = str(
+        self._adress: str = kwargs.pop('adress', None)
+        self._user: str = kwargs.pop('user', None)
+        self._pw: str = kwargs.pop('pw', None)
+        if not kwargs.pop('full_downloadPath', False):
+            self._downloadPath: str = str(
                 Path.cwd() / kwargs.pop('downloadPath', None))
         else:
-            self.downloadPath: str = kwargs.pop('downloadPath', None)
-        if not os.path.isdir(self.downloadPath):
-            raise IOError(f'{self.downloadPath} is not a correct path.')
-        self.year: int = kwargs.pop('year', None)
-        self.month: int = kwargs.pop('month', None)
-        self.datasource = kwargs.pop('datasource', None)
+            self._downloadPath: str = kwargs.pop('downloadPath', None)
+        if not os.path.isdir(self._downloadPath):
+            raise IOError(f'{self._downloadPath} is not a correct path.')
+        self._year: int = kwargs.pop('year', None)
+        self._month: int = kwargs.pop('month', None)
+        self._datasource = kwargs.pop('datasource', None)
         headless = kwargs.pop('headless', True)
         if kwargs:
             raise KeyError(
@@ -62,33 +62,33 @@ class Energi():
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/octet-stream, text/csv",
         )
         fp.set_preference("browser.download.folderList", 2)
-        fp.set_preference("browser.download.dir", self.downloadPath)
+        fp.set_preference("browser.download.dir", self._downloadPath)
         fp.set_preference("browser.helperApps.alwaysAsk.force", False)
         fp.set_preference("browser.download.manager.showWhenStarting", False)
         opts = Options()
         if headless:
             opts.set_headless()
-        self.opts: Options = opts
-        self.firefox_profile: webdriver.FirefoxProfile = fp
+        self._opts: Options = opts
+        self._firefox_profile: webdriver.FirefoxProfile = fp
         #########
 
-    def eon_consumption(self) -> None:
+    def eon_consumption(self, hourly: bool = False) -> None:
         """Downloads file from EON"""
         _year: int = self.year
         month: int = self.month
         year: int = years[_year]
         try:
             driver = webdriver.Firefox(
-                executable_path=self.driverPath,
-                firefox_profile=self.firefox_profile,
-                options=self.opts)
-            driver.get(self.adress)
+                executable_path=self._driverPath,
+                firefox_profile=self._firefox_profile,
+                options=self._opts)
+            driver.get(self._adress)
             ts(5)
             elem1 = driver.find_element_by_id("UserIdField")
             elem2 = driver.find_element_by_id("PasswordField")
-            elem1.send_keys(self.user)
+            elem1.send_keys(self._user)
             ts(5)
-            elem2.send_keys(self.pw)
+            elem2.send_keys(self._pw)
             # logga in
             driver.find_element_by_id("LoginButton").click()
             ts(5)
@@ -103,18 +103,20 @@ class Energi():
             driver.find_element_by_id("installation-box").click()
             ts(5)
             # välj alla fastigheter
-            driver.find_element_by_xpath(
-                'id("installations-result-tab")/table[@class="table table-hover"]/thead[1]/tr[1]/th[@class="no-padding col-md-2"]/button[@class="add-to btn btn-outline with-icon icon-add-to add-all-facilities width-100 no-border"]'
-            ).click()
+            #driver.find_element_by_xpath(
+            #    'id("installations-result-tab")/table[@class="table table-hover"]/thead[1]/tr[1]/th[@class="no-padding col-md-2"]/button[@class="add-to btn btn-outline with-icon icon-add-to add-all-facilities width-100 no-border"]'
+            #).click()
+            driver.find_element_by_css_selector(".add-all-facilities").click()
             ts(5)
             # applicera förändringarna
-            driver.find_element_by_id("apply-changes").click()
+            #driver.find_element_by_id("apply-changes").click()
+            driver.find_element_by_css_selector("#apply-changes").click()
             ts(10)
             # gör val
             #välj månad
             driver.find_element_by_xpath(
                 '//*[@id="period-from-month"]').click()  # val av från period
-            ts(30)
+            ts(5)
             driver.find_element_by_xpath(
                 '/html/body/div[6]/div[2]/table/thead/tr/th[2]').click(
                 )  #val av år
@@ -146,24 +148,28 @@ class Energi():
             )  # bekräfta föränringrana av data
             ts(5)
             #övriga val
-            driver.find_element_by_xpath(
-                '//*[@id="display-type-compare"]/span').click()  # välj jämför
-            #ts(3)
-            #driver.find_element_by_xpath('//*[@id="lbl-show-temp"]/span').click() #välj visa temp, verkat ointe som dett aföljer med till excel, isf onödigt, förstör valet av jämför också
-            ts(5)
-            #driver.find_element_by_xpath('//*[@id="scope"]/form/div[8]/div/div/label/span').click() # avgruppera månadfsvis
+            #driver.find_element_by_xpath(
+            #    '//*[@id="display-type-compare"]/span').click()  # välj jämför
+            driver.find_element_by_css_selector(
+                "#display-type-compare > span:nth-child(2)").click(
+                )  # välj jämför
             ts(10)
-            driver.find_element_by_xpath(
-                '//*[@id="consumption-timeframe"]/div/div/div/div[1]/div/button/span[1]'
-            ).click(
-            )  #välj tidintervall, kostander går endast att få om valet är månader
-            ts(5)
-            #driver.find_element_by_xpath('//*[@id="consumption-cost-header-tab"]/a') # fö att få kostander, används denna så går valet av tidsinetrbvall tillbala till månad
-            #ts(5)
-            driver.find_element_by_xpath(
-                '//*[@id="consumption-timeframe"]/div/div/div/div[1]/div/div/ul/li[5]/a/span'
-            ).click()  # välj timvärden
-            ts(5)
+            if hourly:
+                #driver.find_element_by_css_selector(
+                #    ".no-left-padding > span:nth-child(2)").click(
+                #    )  # avgruppera månader
+                #ts(3)
+                driver.find_element_by_xpath(
+                    '//*[@id="consumption-timeframe"]/div/div/div/div[1]/div/button/span[1]'
+                ).click(
+                )  #välj tidintervall, kostander går endast att få om valet är månader
+                ts(5)
+                #driver.find_element_by_xpath('//*[@id="consumption-cost-header-tab"]/a') # fö att få kostander, används denna så går valet av tidsinetrbvall tillbala till månad
+                #ts(5)
+                driver.find_element_by_xpath(
+                    '//*[@id="consumption-timeframe"]/div/div/div/div[1]/div/div/ul/li[5]/a/span'
+                ).click()  # välj timvärden
+                ts(20)
             # klikcka på öppna i
             driver.find_element_by_xpath(
                 '//*[@id="actions"]/form/div[1]/div[1]/div/div[1]/div/button'
@@ -174,7 +180,7 @@ class Energi():
                 'id("actions")/form[1]/div[@class="row"]/div[@class="col-sm-12"]/div[@class="row"]/div[@class="col-sm-6 i-chart-types"]/div[@class="btn-group dropdown open"]/div[@class="dropdown-menu pull-right no-border"]/button[@class="export btn btn-outline width-100"]'
             ).click()
             #waits for file to download
-            self._check_folder(self.downloadPath)
+            self._check_folder(self._downloadPath)
             #ts(60)
             driver.find_element_by_class_name("log-out").click()
             ts(3)
@@ -196,16 +202,16 @@ class Energi():
         year = years[year]
         try:
             driver = webdriver.Firefox(
-                executable_path=self.driverPath,
-                firefox_profile=self.firefox_profile,
-                options=self.opts)
-            driver.get(self.adress)
+                executable_path=self._driverPath,
+                firefox_profile=self._firefox_profile,
+                options=self._opts)
+            driver.get(self._adress)
             ts(5)
             elem1 = driver.find_element_by_id("UserIdField")
             elem2 = driver.find_element_by_id("PasswordField")
-            elem1.send_keys(self.user)
+            elem1.send_keys(self._user)
             ts(5)
-            elem2.send_keys(self.pw)
+            elem2.send_keys(self._pw)
             # logga in
             driver.find_element_by_id("LoginButton").click()
             ts(5)
@@ -273,7 +279,7 @@ class Energi():
                 "#list-container > div.row.base-list-toolbar > div > div > div > button.export.btn.btn-outline.width-100"
             ).click()
             # väntar på att fil laddar ner
-            Energi._check_folder(self.downloadPath)
+            Energi._check_folder(self._downloadPath)
             #ts(15)
             driver.find_element_by_class_name("log-out").click()
             ts(3)
@@ -301,16 +307,16 @@ class Energi():
             to = str(self.year) + '-' + str(self.month)
         try:
             driver = webdriver.Firefox(
-                executable_path=self.driverPath,
-                firefox_profile=self.firefox_profile,
-                options=self.opts)
-            driver.get(self.adress)
+                executable_path=self._driverPath,
+                firefox_profile=self._firefox_profile,
+                options=self._opts)
+            driver.get(self._adress)
             ts(5)
             elem1 = driver.find_element_by_id("Login1_UserName")
             elem2 = driver.find_element_by_id("Login1_Password")
-            elem1.send_keys(self.user)
+            elem1.send_keys(self._user)
             ts(3)
-            elem2.send_keys(self.pw)
+            elem2.send_keys(self._pw)
             # logga in
             driver.find_element_by_id("Login1_LoginButton").click()
             ts(15)
@@ -330,7 +336,7 @@ class Energi():
             # välj excelfil
             driver.find_element_by_id('lnkExport').click()
             #waits for file to download
-            self._check_folder(self.downloadPath)
+            self._check_folder(self._downloadPath)
             #ts(5)
             # logga ut
             driver.find_element_by_xpath(
@@ -350,16 +356,16 @@ class Energi():
         """
         try:
             driver = webdriver.Firefox(
-                executable_path=self.driverPath,
-                firefox_profile=self.firefox_profile,
-                options=self.opts)
-            driver.get(self.adress)
+                executable_path=self._driverPath,
+                firefox_profile=self._firefox_profile,
+                options=self._opts)
+            driver.get(self._adress)
             ts(5)
             elem1 = driver.find_element_by_name("email")
             elem2 = driver.find_element_by_name("password")
-            elem1.send_keys(self.user)
+            elem1.send_keys(self._user)
             ts(3)
-            elem2.send_keys(self.pw)
+            elem2.send_keys(self._pw)
             # logga in
             driver.find_element_by_class_name("auth0-label-submit").click()
             ts(15)
@@ -407,16 +413,16 @@ class Energi():
         """transforms data downloaded by method eon_consumption to fit database.
         
         """
-        p: Path = Path(self.downloadPath)
+        p: Path = Path(self._downloadPath)
         _fileList: List[Path] = list(p.glob('**/*.xlsx'))
         if len(_fileList) > 1:
             raise IOError(
-                f'There are more than one file in {self.downloadPath}')
+                f'There are more than one file in {self._downloadPath}')
         try:
             _file: Path = _fileList[0]
         except IndexError:
             raise IOError(
-                f'The folder {self.downloadPath} is empty. Is there an error when downloading the file?'
+                f'The folder {self._downloadPath} is empty. Is there an error when downloading the file?'
             )
         cols_eon = pd.read_excel(_file, header=12).columns.tolist()
         cols_eon[0] = "Timestamp"
@@ -433,20 +439,53 @@ class Energi():
         data = [tuple(i) for i in data_eon.values.tolist()]
         return data
 
+    def eon_consumption_transform_monthly(self) -> List[Tuple[Any, ...]]:
+        """[summary]
+        
+        Returns:
+            List[Tuple[Any, ...]] -- [description]
+        """
+
+        p: Path = Path(self._downloadPath)
+        _fileList: List[Path] = list(p.glob('**/*.xlsx'))
+        if len(_fileList) > 1:
+            raise IOError(
+                f'There are more than one file in {self._downloadPath}')
+        try:
+            _file: Path = _fileList[0]
+        except IndexError:
+            raise IOError(
+                f'The folder {self._downloadPath} is empty. Is there an error when downloading the file?'
+            )
+        data = pd.read_excel(_file, header=6, sheet_name='Data')
+        period = data.iloc[5, 0]
+        data = data.transpose().reset_index(drop=True)
+        columns = data.iloc[0, :].tolist()
+        columns = [c if c != period else 'Förbrukning' for c in columns]
+        data.columns = columns
+        data = data.drop(
+            labels=0, axis=0).rename(columns={'Tidpunkt': 'Period'})
+        data.Period = period.replace('-', '')
+        data['Anläggnings-ID'] = data['Anläggnings-ID'].astype(str)
+        data.Förbrukning = data.Förbrukning.astype(float)
+        data = data.where(pd.notnull(data), None)
+        data = [tuple(i) for i in data.values.tolist()]
+        return data
+
     def eon_cost_transform(self):
         """transforms eon cost data
         
         """
-        p = Path(self.downloadPath)
+        p = Path(self._downloadPath)
         file = list(p.glob('**/*.xlsx'))
         if len(file) > 1:
             raise IOError(
-                f'There are more than one file in {self.downloadPath}')
+                f'There are more than one file in {self._downloadPath}')
         try:
             file = file[0]
         except IndexError:
             raise IOError(
-                f'The folder {self.downloadPath} is empty. Is there an error when downloading the file?'
+                f'The folder {self._downloadPath} is empty. Is there an error when downloading the file?'
             )
         eon_cost = pd.read_excel(file, skiprows=9, header=None)
         eon_cost.drop(labels=0, axis=1, inplace=True)  #tar bort tom kolu
@@ -494,17 +533,17 @@ class Energi():
         """
         try:
             driver = webdriver.Firefox(
-                executable_path=self.driverPath,
-                firefox_profile=self.firefox_profile,
-                options=self.opts)
-            driver.get(self.adress)
+                executable_path=self._driverPath,
+                firefox_profile=self._firefox_profile,
+                options=self._opts)
+            driver.get(self._adress)
             ts(5)
             #time.sleep(2)
             elem1 = driver.find_element_by_id("UserIdField")
             elem2 = driver.find_element_by_id("PasswordField")
-            elem1.send_keys(self.user)
+            elem1.send_keys(self._user)
             ts(5)
-            elem2.send_keys(self.pw)
+            elem2.send_keys(self._pw)
             # logga in
             driver.find_element_by_id("LoginButton").click()
             ts(5)
@@ -541,7 +580,7 @@ class Energi():
                 '//*[@id="installation-list-container"]/div[1]/div[1]/div[1]/div/button[1]'
             ).click()
             #waits for file to download
-            Energi._check_folder(self.downloadPath)
+            Energi._check_folder(self._downloadPath)
             #ts(15)
             driver.find_element_by_class_name("log-out").click()
             ts(3)
@@ -558,16 +597,16 @@ class Energi():
         """transforms meta data
 
         """
-        p = Path(self.downloadPath)
+        p = Path(self._downloadPath)
         file = list(p.glob('**/*.xlsx'))
         if len(file) > 1:
             raise IOError(
-                f'There are more than one file in {self.downloadPath}')
+                f'There are more than one file in {self._downloadPath}')
         try:
             file = file[0]
         except IndexError:
             raise IOError(
-                f'The folder {self.downloadPath} is empty. Is there an error when downloading the file?'
+                f'The folder {self._downloadPath} is empty. Is there an error when downloading the file?'
             )
         meta_eon = pd.read_excel(
             file, skiprows=9, converters={
@@ -591,16 +630,16 @@ class Energi():
         """data transformation of los excel file. 
         
         """
-        p = Path(self.downloadPath)
+        p = Path(self._downloadPath)
         _file = list(p.glob('**/*.xls*'))
         if len(_file) > 1:
             raise IOError(
-                f'There are more than one file in {self.downloadPath}')
+                f'There are more than one file in {self._downloadPath}')
         try:
             _file = _file[0]
         except IndexError:
             raise IOError(
-                f'The folder {self.downloadPath} is empty. Is there an error when downloading the file?'
+                f'The folder {self._downloadPath} is empty. Is there an error when downloading the file?'
             )
         df = pd.read_excel(_file, header=None)
         period = df.iloc[0, 0][7:13]
@@ -645,15 +684,16 @@ class Energi():
             data = [tuple(i) for i in data_cl.values.tolist()]
             return data
 
-    def db_insert(self,
-                  data: List[Tuple[Any, ...]],
-                  server: str,
-                  db: str,
-                  table: str,
-                  user: str,
-                  pw: str,
-                  truncate: bool = False,
-                  controlForDuplicates: bool = True) -> None:
+    def db_insert(
+            self,
+            data: List[Tuple[Any, ...]],
+            server: str,
+            db: str,
+            table: str,
+            user: str,
+            pw: str,
+            truncate: bool = False,
+    ) -> None:
         """inserts data into database 
         
         :param data: data to insert into database.
@@ -676,58 +716,44 @@ class Energi():
         if not data:
             return
         _truncate: str
-        query: Optional[str] = None
         if truncate:
             _truncate = 'yes'
         else:
             _truncate = 'no'
-        if controlForDuplicates:
-            query = self._control_for_duplicates(
-                server=server,
-                db=db,
-                table=table,
-                data=data,
-                user=user,
-                password=pw,
-            )
-        if query:
-            current_data = mssql_query(
-                server=server, db=db, user=user, password=pw,
-                query=query)  # bugg här
-            if self.datasource == 'eon_consumption':
-                time_format = '%Y-%m-%d %H:%M:%S'
-                current_data = set((i[0].strftime(time_format), str(i[1]),
-                                    float(i[2])) for i in current_data)
-            else:
-                _current_data = []
-                for i in current_data:
-                    _temp = []
-                    for y in i:
-                        if type(y) is Decimal:
-                            y = float(y)
-                        _temp.append(y)
-                    _current_data.append(tuple(_temp))
-                current_data = set(_current_data)
-            data_diff = set(data) - current_data
-            data = list(data_diff)
-        if data:
-            mssql_insert(
-                server=server,
-                db=db,
-                table=table,
-                data=data,
-                user=user,
-                password=pw,
-                truncate=_truncate)
+        mssql_insert(
+            server=server,
+            db=db,
+            table=table,
+            data=data,
+            user=user,
+            password=pw,
+            truncate=_truncate)
 
-    def _help_db_insert(self):
+    @staticmethod
+    def db_delete_records(
+            server: str,
+            user: str,
+            database: str,
+            password: str,
+            table: str,
+            whereClause: str,
+    ) -> None:
         """
-
         """
-        # TODO: skriv en metod som returnar 2 queries om start och end skiljer sig
-        pass
+        statement = f"""DELETE FROM {table} WHERE {whereClause}"""
+        mssql_insert(
+            statement=statement,
+            server=server,
+            db=database,
+            user=user,
+            password=password,
+            table=table,
+        )
 
-    def clean_folder(self, destinationFolder: str = None) -> None:
+    def clean_folder(
+            self,
+            destinationFolder: str = None,
+    ) -> None:
         """Deletes all files in given dir or moves them to another dir.
         To move to another dir ther parameter destinationFolder must be specified.
         
@@ -738,24 +764,28 @@ class Energi():
         path_content: List[Path]
         d: str = destinationFolder
         destination_path: Path
-        p = Path(self.downloadPath)
+        p = Path(self._downloadPath)
         path_content = list(p.glob('**/*.xls*'))
         if path_content:
             for f in path_content:
                 if not d:
-                    os.remove(p / f)
+                    os.remove(f)
                 else:
-                    path = p / f
+                    path = f
                     destination_path = path.parent.parent / d / path.name
                     path.rename(destination_path)
 
     @staticmethod
-    def _check_folder(folder: str) -> None:
+    def _check_folder(
+            folder: str,
+            minutes: int = 2,
+    ) -> None:
         """
-        controls if folder is empty. Raises error if time exceeds 60 seconds
+        controls if folder is empty. Raises error if time exceeds int given
+        in minutes. default 2
         """
         _folder: Path = Path(folder)
-        timeout = time.time() + 60 * 2  # 2 minutes
+        timeout = time.time() + 60 * minutes  # 2 minutes
         while True:
             if time.time() > timeout:
                 break  #
@@ -773,13 +803,13 @@ class Energi():
         """
         controls table if data already exists
         """
-        if self.datasource == 'eon_consumption':
+        if self._datasource == 'eon_consumption':
             query = f'SELECT * FROM {table} WHERE YEAR([Timestamp])={self.year} AND MONTH([TIMESTAMP])={self.month}'
-        elif self.datasource == 'eon_cost':
+        elif self._datasource == 'eon_cost':
             query = None
-        elif self.datasource == 'eon_meta':
+        elif self._datasource == 'eon_meta':
             query = None
-        elif self.datasource == 'los':
+        elif self._datasource == 'los':
             if self.month < 10:
                 m = str('0' + str(self.month))
                 period = str(self.year) + '-' + m
@@ -793,9 +823,28 @@ class Energi():
     def _rename_file(self, facility: str):
         """helper method that renames given file
         """
-        folder: Path = Path(self.downloadPath)
+        folder: Path = Path(self._downloadPath)
         files: List = list(folder.glob('*.csv'))
         latest_file: str = max(files, key=os.path.getctime)
         name: str = facility + '.csv'
         Path(latest_file).replace(folder / name)
         print(latest_file)
+
+    @property
+    def year(self):
+        return self._year
+
+    @property
+    def month(self):
+        return self._month
+
+    @property
+    def period(self):
+        m = str(self._month)
+        if len(m) == 1:
+            m = '0' + m
+        return str(self._year) + m
+
+    @property
+    def downloadPath(self):
+        return self._downloadPath
