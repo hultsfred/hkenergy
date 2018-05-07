@@ -1,3 +1,3 @@
 """config file
 """
-HEADLESS = False
+HEADLESS = True
