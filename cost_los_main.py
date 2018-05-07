@@ -30,7 +30,6 @@ CONN_LOG = pymssql.connect(SERVER, USER_DB, PW_DB, DB)
 CURSOR_LOG = CONN_LOG.cursor()
 
 
-# denna laddar ner data när kostnaden är noll, det ska den inte göra,
 @exception(create_logger_db(CONN_LOG, CURSOR_LOG, TABLE_LOG, 'energi_los'))
 def main():
     try:
@@ -52,7 +51,8 @@ def main():
             table=TABLE_LOS,
             user=USER_DB,
             password=PW_DB,
-            whereClause=f"""Period = '{en.period[:4]+'-'+en.period[4:]}'""")
+            whereClause=f"""Period = '{en.period[:4]+'-'+en.period[4:]}'""",
+        )
         en.db_insert(
             data=data,
             server=SERVER,
