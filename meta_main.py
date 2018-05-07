@@ -50,7 +50,7 @@ def main():
             user=USER_DB,
             pw=PW_DB,
             truncate=TRUNCATE,
-            controlForDuplicates=CONTROLDUPLICATES)
+        )
         en.clean_folder()
     except Exception:
         send_mail(
