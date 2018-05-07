@@ -24,7 +24,6 @@ DATASOURCE = 'los'
 MESSAGEHEADER = 'LOS'
 WORKINGDIR = '.'
 TRUNCATE = False
-CONTROLDUPLICATES = True
 headless = HEADLESS
 
 CONN_LOG = pymssql.connect(SERVER, USER_DB, PW_DB, DB)
@@ -47,6 +46,13 @@ def main():
             headless=headless)
         en.los_cost()
         data = en.los_cost_transform()
+        en.db_delete_records(
+            server=SERVER,
+            database=DB,
+            table=TABLE_LOS,
+            user=USER_DB,
+            password=PW_DB,
+            whereClause=f"""Period = '{en.period[:4]+'-'+en.period[4:]}'""")
         en.db_insert(
             data=data,
             server=SERVER,
@@ -55,7 +61,7 @@ def main():
             user=USER_DB,
             pw=PW_DB,
             truncate=TRUNCATE,
-            controlForDuplicates=CONTROLDUPLICATES)
+        )
         en.clean_folder()
     except Exception:
         send_mail(

@@ -20,7 +20,6 @@ DATASOURCE = 'eon_cost'
 MESSAGEHEADER = 'eon cost'
 WORKINGDIR = '.'
 TRUNCATE = False
-CONTROLDUPLICATES = True
 headless = HEADLESS
 
 CONN_LOG = pymssql.connect(SERVER, USER_DB, PW_DB, DB)
@@ -43,6 +42,14 @@ def main():
             headless=headless)
         en.eon_cost()
         data = en.eon_cost_transform()
+        en.db_delete_records(
+            server=SERVER,
+            database=DB,
+            table=TABLE_EON_COST,
+            user=USER_DB,
+            password=PW_DB,
+            whereClause=
+            f"""Förbrukningsperiod = '{en.period[:4]+'-'+en.period[4:]}'""")
         en.db_insert(
             data=data,
             server=SERVER,
@@ -51,7 +58,7 @@ def main():
             user=USER_DB,
             pw=PW_DB,
             truncate=TRUNCATE,
-            controlForDuplicates=CONTROLDUPLICATES)
+        )
         en.clean_folder()
     except Exception:
         send_mail(
