@@ -488,8 +488,10 @@ class Energi():
                 f'The folder {self._downloadPath} is empty. Is there an error when downloading the file?'
             )
         eon_cost = pd.read_excel(file, skiprows=9, header=None)
-        eon_cost.drop(labels=0, axis=1, inplace=True)  #tar bort tom kolu
-        eon_cost.columns = eon_cost.iloc[0, :].tolist()
+        eon_cost.drop(labels=0, axis=1, inplace=True)  #tar bort tom kolumn
+        columns = [c.strip()
+                   for c in eon_cost.iloc[0, :].tolist()]  # trims whitespace
+        eon_cost.columns = columns
         eon_cost.drop(labels=0, axis=0, inplace=True)
         eon_cost[['Nät', 'Energi',
                   'Energiskatt']] = eon_cost[['Nät', 'Energi',
