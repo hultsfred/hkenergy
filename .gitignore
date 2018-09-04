@@ -17,3 +17,4 @@ mall/*
 .ipynb*
 _testing*
 *.ipynb
+consumption_eon_main_multiple_periods.py
