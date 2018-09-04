@@ -167,7 +167,7 @@ class Energi():
                 #driver.find_element_by_xpath('//*[@id="consumption-cost-header-tab"]/a') # fö att få kostander, används denna så går valet av tidsinetrbvall tillbala till månad
                 #ts(5)
                 driver.find_element_by_xpath(
-                    '//*[@id="consumption-timeframe"]/div/div/div/div[1]/div/div/ul/li[5]/a/span'
+                    '//*[@id="consumption-timeframe"]/div/div/div/div[1]/div/div/ul/li[6]/a/span'
                 ).click()  # välj timvärden
                 ts(20)
             # klikcka på öppna i
