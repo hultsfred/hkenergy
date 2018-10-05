@@ -49,8 +49,9 @@ class Energi():
             raise IOError(f'{self._downloadPath} is not a correct path.')
         self._year: int = kwargs.pop('year', None)
         self._month: int = kwargs.pop('month', None)
-        self._datasource = kwargs.pop('datasource', None)
-        headless = kwargs.pop('headless', True)
+        self._tertial: bool = kwargs.pop('tertial', None)
+        self._datasource: str = kwargs.pop('datasource', None)
+        headless: bool = kwargs.pop('headless', True)
         if kwargs:
             raise KeyError(
                 f'The keyword/s {list(kwargs.keys())} is/are incorrect.')
@@ -197,9 +198,15 @@ class Energi():
     def eon_cost(self):
         """downloads file with costs from eon
         """
-        year = self.year
-        month = self.month
-        year = years[year]
+        if not self._tertial:
+            year = years[self.year]
+            month = self.month
+        else:
+            _tertial = self._createTertial()
+            startYear = years[int(_tertial[0][:4])]
+            endYear = years[int(_tertial[3][:4])]
+            startMonth = int(_tertial[0][5:])
+            endMonth = int(_tertial[3][5:])
         try:
             driver = webdriver.Firefox(
                 executable_path=self._driverPath,
@@ -231,35 +238,66 @@ class Energi():
                 '//*[@id="body"]/div[2]/div/div[2]/ul/li[4]/ul/li[2]/a').click(
                 )
             ts(10)
-            # välj startmånad
-            driver.find_element_by_id('dateFrom').click()
-            ts(3)
-            driver.find_element_by_xpath(
-                '/html/body/div[6]/div[2]/table/thead/tr/th[2]').click(
-                )  #val av år
-            ts(3)
-            driver.find_element_by_xpath(
-                f'/html/body/div[6]/div[3]/table/tbody/tr/td/span[{year}]'
-            ).click()  # 9=2017
-            ts(3)
-            driver.find_element_by_xpath(
-                f'/html/body/div[6]/div[2]/table/tbody/tr/td/span[{month}]'
-            ).click()
-            ts(3)
-            # välj slutmånad
-            driver.find_element_by_id('dateTo').click()
-            ts(3)
-            driver.find_element_by_xpath(
-                '/html/body/div[6]/div[2]/table/thead/tr/th[2]').click(
-                )  #val av år
-            driver.find_element_by_xpath(
-                f'/html/body/div[6]/div[3]/table/tbody/tr/td/span[{year}]'
-            ).click()  # 9=2017
-            ts(3)
-            driver.find_element_by_xpath(
-                f'/html/body/div[6]/div[2]/table/tbody/tr/td/span[{month}]'
-            ).click()
-            ts(3)
+            if not self._tertial:
+                # välj startmånad
+                driver.find_element_by_id('dateFrom').click()
+                ts(3)
+                driver.find_element_by_xpath(
+                    '/html/body/div[6]/div[2]/table/thead/tr/th[2]').click(
+                    )  #val av år
+                ts(3)
+                driver.find_element_by_xpath(
+                    f'/html/body/div[6]/div[3]/table/tbody/tr/td/span[{year}]'
+                ).click()  # 9=2017
+                ts(3)
+                driver.find_element_by_xpath(
+                    f'/html/body/div[6]/div[2]/table/tbody/tr/td/span[{month}]'
+                ).click()
+                ts(3)
+                # välj slutmånad
+                driver.find_element_by_id('dateTo').click()
+                ts(3)
+                driver.find_element_by_xpath(
+                    '/html/body/div[6]/div[2]/table/thead/tr/th[2]').click(
+                    )  #val av år
+                driver.find_element_by_xpath(
+                    f'/html/body/div[6]/div[3]/table/tbody/tr/td/span[{year}]'
+                ).click()  # 9=2017
+                ts(3)
+                driver.find_element_by_xpath(
+                    f'/html/body/div[6]/div[2]/table/tbody/tr/td/span[{month}]'
+                ).click()
+                ts(3)
+            else:
+                # välj startmånad
+                driver.find_element_by_id('dateFrom').click()
+                ts(3)
+                driver.find_element_by_xpath(
+                    '/html/body/div[6]/div[2]/table/thead/tr/th[2]').click(
+                    )  #val av år
+                ts(3)
+                driver.find_element_by_xpath(
+                    f'/html/body/div[6]/div[3]/table/tbody/tr/td/span[{startYear}]'
+                ).click()  # 9=2017
+                ts(3)
+                driver.find_element_by_xpath(
+                    f'/html/body/div[6]/div[2]/table/tbody/tr/td/span[{startMonth}]'
+                ).click()
+                ts(3)
+                # välj slutmånad
+                driver.find_element_by_id('dateTo').click()
+                ts(3)
+                driver.find_element_by_xpath(
+                    '/html/body/div[6]/div[2]/table/thead/tr/th[2]').click(
+                    )  #val av år
+                driver.find_element_by_xpath(
+                    f'/html/body/div[6]/div[3]/table/tbody/tr/td/span[{endYear}]'
+                ).click()  # 9=2017
+                ts(3)
+                driver.find_element_by_xpath(
+                    f'/html/body/div[6]/div[2]/table/tbody/tr/td/span[{endMonth}]'
+                ).click()
+                ts(3)
             # sök => applicera valda månader
             driver.find_element_by_xpath(
                 '//*[@id="costs-filter"]/div[6]/div/button').click()
@@ -832,6 +870,70 @@ class Energi():
         Path(latest_file).replace(folder / name)
         print(latest_file)
 
+    def _createTertial(self):
+        """helper method to create month in given quarter 
+        """
+        startYear = str(self.year)
+        if self._month == 3:
+            startMonth = self.month + 9
+            middleMonth1 = self.month - 2
+            middleMonth2 = self.month - 1
+            startYear = str(self.year - 1)
+        elif self._month == 2:
+            startMonth = self._month + 9
+            middleMonth1 = self.month + 10
+            middleMonth2 = self.month - 1
+            startYear = str(self.year - 1)
+        elif self._month == 1:
+            startMonth = self._month + 9
+            middleMonth1 = self.month + 10
+            middleMonth2 = self.month + 11
+            startYear = str(self.year - 1)
+        else:
+            startMonth = self.month - 3
+            middleMonth1 = self.month - 2
+            middleMonth2 = self.month - 1
+        startMonth = str(startMonth)
+        middleMonth1 = str(middleMonth1)
+        middleMonth2 = str(middleMonth2)
+        endMonth = str(self.month)
+        if int(startMonth) < 10:
+            startMonth = '0' + startMonth
+        if int(middleMonth1) < 10:
+            middleMonth1 = '0' + middleMonth1
+        if int(middleMonth2) < 10:
+            middleMonth2 = '0' + middleMonth2
+        if int(endMonth) < 10:
+            endMonth = '0' + endMonth
+        endYear = str(self._year)
+        _months = [startMonth, middleMonth1, middleMonth2, endMonth]
+        if startYear == endYear:
+            _quarter = [endYear + '-' + m for m in _months]
+        else:
+            if self._month == 3:
+                _quarter = [
+                    startYear + '-' + startMonth, endYear + '-' + middleMonth1,
+                    endYear + '-' + middleMonth2, endYear + '-' + endMonth
+                ]
+            elif self._month == 2:
+                _quarter = [
+                    startYear + '-' + startMonth,
+                    startYear + '-' + middleMonth1,
+                    endYear + '-' + middleMonth2, endYear + '-' + endMonth
+                ]
+            elif self._month == 1:
+                _quarter = [
+                    startYear + '-' + startMonth,
+                    startYear + '-' + middleMonth1,
+                    startYear + '-' + middleMonth2, endYear + '-' + endMonth
+                ]
+            else:
+                _quarter = [
+                    endYear + '-' + startMonth, endYear + '-' + middleMonth1,
+                    endYear + '-' + middleMonth2, endYear + '-' + endMonth
+                ]
+        return _quarter
+
     @property
     def year(self):
         return self._year
@@ -846,6 +948,17 @@ class Energi():
         if len(m) == 1:
             m = '0' + m
         return str(self._year) + m
+
+    @property
+    def period2(self):
+        m = str(self.month)
+        if len(m) == 1:
+            m = '0' + m
+        return str(self.year) + '-' + m
+
+    @property
+    def tertial(self):
+        return self._createTertial()
 
     @property
     def downloadPath(self):

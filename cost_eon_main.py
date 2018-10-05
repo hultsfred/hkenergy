@@ -38,10 +38,12 @@ def main():
             downloadPath=DOWNLOAPATH,
             year=YEAR,
             month=MONTH,
+            tertial=True,
             datasource=DATASOURCE,
             headless=headless)
         en.eon_cost()
         data = en.eon_cost_transform()
+        _tertial = en.tertial
         en.db_delete_records(
             server=SERVER,
             database=DB,
@@ -49,7 +51,8 @@ def main():
             user=USER_DB,
             password=PW_DB,
             whereClause=
-            f"""Förbrukningsperiod = '{en.period[:4]+'-'+en.period[4:]}'""")
+            f"""Förbrukningsperiod IN ('{_tertial[0]}', '{_tertial[1]}', '{_tertial[2]}', '{_tertial[3]}')"""
+        )
         en.db_insert(
             data=data,
             server=SERVER,
