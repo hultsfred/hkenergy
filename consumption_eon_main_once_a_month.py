@@ -6,7 +6,7 @@ import traceback
 from energi._PRIVATE_ENERGI import PASSWORD_EON, KEY, EON, USER
 from energi._PRIVATE_DB import SERVER, DB, TABLE_LOG, USER_DB, PASSWORD_DB, KEY_DB, TABLE_CONSUMPTION_HOURLY
 from energi._PRIVATE_MAIL import MAILSERVER, FROM_, TO, SUBJECT
-from energi._config import HEADLESS
+from energi._config import HEADLESS, SENDMAIL
 from cryptography.fernet import Fernet
 import pymssql
 
@@ -66,13 +66,14 @@ def main():
         )
         en.clean_folder(destinationFolder=FOLDER2)
     except Exception:
-        send_mail(
-            MAILSERVER,
-            FROM_,
-            TO,
-            SUBJECT,
-            messageHeader=MESSAGEHEADER,
-            messageBody=traceback.format_exc())
+        if SENDMAIL:
+            send_mail(
+                MAILSERVER,
+                FROM_,
+                TO,
+                SUBJECT,
+                messageHeader=MESSAGEHEADER,
+                messageBody=traceback.format_exc())
         raise
 
 

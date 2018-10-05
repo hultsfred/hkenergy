@@ -4,14 +4,10 @@ from hkfunctions.api import exception, create_logger_db, send_mail
 import traceback
 from energi._PRIVATE_ENERGI import PASSWORD_LOS, KEY, LOS, USER
 from energi._PRIVATE_DB import SERVER, DB, TABLE_LOG, USER_DB, PASSWORD_DB, KEY_DB, TABLE_LOS
-from energi._config import HEADLESS
+from energi._PRIVATE_MAIL import MAILSERVER, FROM_, TO, SUBJECT
+from energi._config import HEADLESS, SENDMAIL
 from cryptography.fernet import Fernet
 import pymssql
-
-MAILSERVER = 'hks-mgw.hultsfred.se'
-FROM_ = 'energi_integration@hultsfred.se'
-TO = 'henric.sundberg@hultsfred.se'
-SUBJECT = 'Fel i energiintegrationen'
 
 PW_DB = Fernet(KEY_DB).decrypt(PASSWORD_DB).decode('utf8')
 PW_LOS = Fernet(KEY).decrypt(PASSWORD_LOS).decode('utf8')
@@ -64,13 +60,14 @@ def main():
         )
         en.clean_folder()
     except Exception:
-        send_mail(
-            MAILSERVER,
-            FROM_,
-            TO,
-            SUBJECT,
-            messageHeader=MESSAGEHEADER,
-            messageBody=traceback.format_exc())
+        if SENDMAIL:
+            send_mail(
+                MAILSERVER,
+                FROM_,
+                TO,
+                SUBJECT,
+                messageHeader=MESSAGEHEADER,
+                messageBody=traceback.format_exc())
         raise
 
 

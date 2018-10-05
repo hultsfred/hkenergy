@@ -64,13 +64,14 @@ def main():
         )
         en.clean_folder()
     except Exception:
-        send_mail(
-            MAILSERVER,
-            FROM_,
-            TO,
-            SUBJECT,
-            messageHeader=MESSAGEHEADER,
-            messageBody=traceback.format_exc())
+        if SENDMAIL:
+            send_mail(
+                MAILSERVER,
+                FROM_,
+                TO,
+                SUBJECT,
+                messageHeader=MESSAGEHEADER,
+                messageBody=traceback.format_exc())
         raise
 
 
