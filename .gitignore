@@ -15,6 +15,6 @@ mall/*
 */OLD/*
 *.pbix
 .ipynb*
-_testing*
+_test*
 *.ipynb
 consumption_eon_main_multiple_periods.py

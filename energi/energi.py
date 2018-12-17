@@ -24,7 +24,6 @@ class Energi():
     This class includes methods to help download exceldata from EON and LOS
     websites.
     """
-    _driverPath: str = r'.\webdriver\geckodriver.exe'
 
     def __init__(self, workingDir: str, **kwargs) -> None:
         """initializes the class
@@ -36,6 +35,7 @@ class Energi():
         :raises IOError: wrong downloadPath is given
         :raises KeyError: Incorrect keyword/s har given
         """
+        self._driverPath: str = r'.\webdriver\geckodriver.exe'
         os.chdir(workingDir)
         self._adress: str = kwargs.pop('adress', None)
         self._user: str = kwargs.pop('user', None)
@@ -73,119 +73,237 @@ class Energi():
         self._firefox_profile: webdriver.FirefoxProfile = fp
         #########
 
+    
+    
+    def log_in_eon(self) -> None:
+        """[summary]
+        
+        :return: [description]
+        :rtype: None
+        """
+        driver = webdriver.Firefox(
+            executable_path=self._driverPath,
+            firefox_profile=self._firefox_profile,
+            options=self._opts)
+        driver.get(self._adress)
+        ts(5)
+        elem1 = driver.find_element_by_id("UserIdField")
+        elem2 = driver.find_element_by_id("PasswordField")
+        elem1.send_keys(self._user)
+        ts(5)
+        elem2.send_keys(self._pw)
+        # logga in
+        driver.find_element_by_id("LoginButton").click()
+        ts(5)
+        # välj hultsfreds kommun
+        #driver.find_element_by_class_name('business-account-link').click() # HK och HKIAB har bytt plats därför måste css selector användas
+        order = 2
+        driver.find_element_by_css_selector(
+            f"body > form > div > div > div.modal-body > div.form-group > table > tbody > tr:nth-child({order}) > td > div > a"
+        ).click()
+        ts(3)
+        return driver
+
+    @staticmethod
+    def choose_start_period_eon(driver, year, month, calling_function) -> None:
+        """[summary]
+        
+        :return: [description]
+        :rtype: None
+        """
+        if calling_function == "consumption":
+            _id = 'period-from-month'
+        elif calling_function == "cost":
+            _id = 'dateFrom'
+        driver.find_element_by_id(_id).click()  # val av start period
+        ts(5)
+        driver.find_element_by_xpath(
+                '/html/body/div[7]/div[2]/table/thead/tr/th[2]').click(
+                )  #val av år
+        ts(5)
+        driver.find_element_by_xpath(f'/html/body/div[7]/div[3]/table/tbody/tr/td/span[{year}]').click()  # 9=2017
+        ts(3)
+        driver.find_element_by_xpath(f'/html/body/div[7]/div[2]/table/tbody/tr/td/span[{month}]').click()  #val av månad 11=nov
+        return driver
+    
+    @staticmethod
+    def choose_end_period_eon(driver, year, month, calling_function):
+        """[summary]
+        
+        :param driver: [description]
+        :type driver: [type]
+        :param year: [description]
+        :type year: [type]
+        :param month: [description]
+        :type month: [type]
+        """
+        if calling_function == "consumption":
+            _id = 'period-to-month'
+        elif calling_function == "cost":
+            _id = 'dateTo'
+        driver.find_element_by_id(_id).click()  # val av tom perid
+        ts(3)
+        driver.find_element_by_xpath(
+            '/html/body/div[7]/div[2]/table/thead/tr/th[2]').click(
+            )  #val av år
+        ts(3)
+        driver.find_element_by_xpath(
+            f'/html/body/div[7]/div[3]/table/tbody/tr/td/span[{year}]'
+        ).click()  # 9=2017
+        ts(3)
+        driver.find_element_by_xpath(
+            f'/html/body/div[7]/div[2]/table/tbody/tr/td/span[{month}]'
+        ).click()  # val av månad 11=nov
+        ts(5)
+        if calling_function == "cost":
+            # sök => applicera valda månader
+            driver.find_element_by_xpath(
+                '//*[@id="costs-filter"]/div[6]/div/button').click()
+            ts(10)
+        return driver
+
+    @staticmethod
+    def hourly_eon(driver):
+        """[summary]
+        
+        :param driver: [description]
+        :type driver: [type]
+        """
+        driver.find_element_by_xpath(
+            '//*[@id="consumption-timeframe"]/div/div/div/div[1]/div/button/span[1]'
+        ).click(
+        )  #välj tidintervall, kostander går endast att få om valet är månader
+        ts(5)
+        #driver.find_element_by_xpath('//*[@id="consumption-cost-header-tab"]/a') # fö att få kostander, används denna så går valet av tidsinetrbvall tillbala till månad
+        #ts(5)
+        driver.find_element_by_xpath(
+            '//*[@id="consumption-timeframe"]/div/div/div/div[1]/div/div/ul/li[6]/a/span'
+        ).click()  # välj timvärden
+        ts(20)
+        return driver
+
+    @staticmethod
+    def log_out_eon(driver):
+        """[summary]
+        
+        :param driver: [description]
+        :type driver: [type]
+        """
+        driver.find_element_by_class_name("log-out").click()
+        ts(3)
+        driver.close()
+
+
+    @staticmethod
+    def choose_analysis_all_facilities(driver):
+        """[summary]
+        
+        :param driver: [description]
+        :type driver: [type]
+        """
+        # välj analys
+        driver.find_element_by_id("installation-box").click()
+        ts(5)
+        # välj alla fastigheter
+        driver.find_element_by_css_selector(".add-all-facilities").click()
+        ts(5)
+        # applicera förändringarna
+        driver.find_element_by_css_selector("#apply-changes").click()
+        ts(10)
+        return driver
+
+    @staticmethod
+    def download_excel_consumption_eon(driver):
+        """[summary]
+        
+        :param driver: [description]
+        :type driver: [type]
+        """
+        # klikcka på öppna i
+        driver.find_element_by_xpath(
+            '//*[@id="actions"]/form/div[1]/div[1]/div/div[1]/div/button'
+        ).click()
+        ts(5)
+        # välj öppna i excel
+        driver.find_element_by_xpath(
+            'id("actions")/form[1]/div[@class="row"]/div[@class="col-sm-12"]/div[@class="row"]/div[@class="col-sm-6 i-chart-types"]/div[@class="btn-group dropdown open"]/div[@class="dropdown-menu pull-right no-border"]/button[@class="export btn btn-outline width-100"]'
+        ).click()
+        return driver
+
+    @staticmethod
+    def choose_economics_costs_eon(driver):
+        """[summary]
+        
+        :param driver: [description]
+        :type driver: [type]
+        """
+        # välj ekonomi
+        driver.find_element_by_xpath(
+            '//*[@id="body"]/div[2]/div/div[2]/ul/li[4]').click()
+        ts(3)
+        # välj kostnader
+        driver.find_element_by_xpath(
+            '//*[@id="body"]/div[2]/div/div[2]/ul/li[4]/ul/li[2]/a').click(
+            )
+        ts(10)
+        return driver
+
+    @staticmethod
+    def choose_all_download_excel_cost_eon(driver):
+        """[summary]
+        
+        :param driver: [description]
+        :type driver: [type]
+        """
+        # välj alla fastigheter
+        driver.find_element_by_css_selector(
+            "#list-container > div.base-list > table > thead.tableFloatingHeaderOriginal > tr > th.select > label > span"
+        ).click()
+        ts(5)
+        # öpnna menyn "Öppna i..."
+        driver.find_element_by_css_selector(
+            "#list-container > div.row.base-list-toolbar > div > div > button"
+        ).click()
+        ts(5)
+        # klicka ladda ner
+        driver.find_element_by_css_selector(
+            "#list-container > div.row.base-list-toolbar > div > div > div > button.export.btn.btn-outline.width-100"
+        ).click()
+        return driver
+
+    @staticmethod
+    def choose_compare_consumption_eon(driver):
+        """[summary]
+        
+        :param driver: [description]
+        :type driver: [type]
+        """
+        driver.find_element_by_css_selector(
+        "#display-type-compare > span:nth-child(2)").click(
+        )  # välj jämför
+        ts(10)
+        return driver
+
+
+
     def eon_consumption(self, hourly: bool = False) -> None:
         """Downloads file from EON"""
         _year: int = self.year
         month: int = self.month
         year: int = years[_year]
         try:
-            driver = webdriver.Firefox(
-                executable_path=self._driverPath,
-                firefox_profile=self._firefox_profile,
-                options=self._opts)
-            driver.get(self._adress)
-            ts(5)
-            elem1 = driver.find_element_by_id("UserIdField")
-            elem2 = driver.find_element_by_id("PasswordField")
-            elem1.send_keys(self._user)
-            ts(5)
-            elem2.send_keys(self._pw)
-            # logga in
-            driver.find_element_by_id("LoginButton").click()
-            ts(5)
-            # välj hultsfreds kommun
-            #driver.find_element_by_class_name('business-account-link').click() # HK och HKIAB har bytt plats därför måste css selector användas
-            order = 2
-            driver.find_element_by_css_selector(
-                f"body > form > div > div > div.modal-body > div.form-group > table > tbody > tr:nth-child({order}) > td > div > a"
-            ).click()
-            ts(3)
-            # välj analys
-            driver.find_element_by_id("installation-box").click()
-            ts(5)
-            # välj alla fastigheter
-            #driver.find_element_by_xpath(
-            #    'id("installations-result-tab")/table[@class="table table-hover"]/thead[1]/tr[1]/th[@class="no-padding col-md-2"]/button[@class="add-to btn btn-outline with-icon icon-add-to add-all-facilities width-100 no-border"]'
-            #).click()
-            driver.find_element_by_css_selector(".add-all-facilities").click()
-            ts(5)
-            # applicera förändringarna
-            #driver.find_element_by_id("apply-changes").click()
-            driver.find_element_by_css_selector("#apply-changes").click()
-            ts(10)
-            # gör val
-            #välj månad
-            driver.find_element_by_xpath(
-                '//*[@id="period-from-month"]').click()  # val av från period
-            ts(5)
-            driver.find_element_by_xpath(
-                '/html/body/div[6]/div[2]/table/thead/tr/th[2]').click(
-                )  #val av år
-            ts(5)
-            driver.find_element_by_xpath(
-                f'/html/body/div[6]/div[3]/table/tbody/tr/td/span[{year}] '
-            ).click()  # 9=2017
-            ts(3)
-            driver.find_element_by_xpath(
-                f'/html/body/div[6]/div[2]/table/tbody/tr/td/span[{month}]'
-            ).click()  #val av månad 11=nov
-            ts(3)
-            driver.find_element_by_xpath(
-                '//*[@id="period-to-month"]').click()  # val av tom perid
-            ts(3)
-            driver.find_element_by_xpath(
-                '/html/body/div[6]/div[2]/table/thead/tr/th[2]').click(
-                )  #val av år
-            ts(3)
-            driver.find_element_by_xpath(
-                f'/html/body/div[6]/div[3]/table/tbody/tr/td/span[{year}]'
-            ).click()  # 9=2017
-            ts(3)
-            driver.find_element_by_xpath(
-                f'/html/body/div[6]/div[2]/table/tbody/tr/td/span[{month}]'
-            ).click()  # val av månad 11=nov
-            ts(3)
-            driver.find_element_by_xpath('//*[@id="fetch-data"]').click(
-            )  # bekräfta föränringrana av data
-            ts(5)
-            #övriga val
-            #driver.find_element_by_xpath(
-            #    '//*[@id="display-type-compare"]/span').click()  # välj jämför
-            driver.find_element_by_css_selector(
-                "#display-type-compare > span:nth-child(2)").click(
-                )  # välj jämför
-            ts(10)
+            driver = self.log_in_eon()
+            driver = self.choose_analysis_all_facilities(driver)
+            driver = self.choose_start_period_eon(driver, year, month, "consumption")
+            driver = self.choose_end_period_eon(driver, year, month, "consumption")
+            driver = self.choose_compare_consumption_eon(driver)
             if hourly:
-                #driver.find_element_by_css_selector(
-                #    ".no-left-padding > span:nth-child(2)").click(
-                #    )  # avgruppera månader
-                #ts(3)
-                driver.find_element_by_xpath(
-                    '//*[@id="consumption-timeframe"]/div/div/div/div[1]/div/button/span[1]'
-                ).click(
-                )  #välj tidintervall, kostander går endast att få om valet är månader
-                ts(5)
-                #driver.find_element_by_xpath('//*[@id="consumption-cost-header-tab"]/a') # fö att få kostander, används denna så går valet av tidsinetrbvall tillbala till månad
-                #ts(5)
-                driver.find_element_by_xpath(
-                    '//*[@id="consumption-timeframe"]/div/div/div/div[1]/div/div/ul/li[6]/a/span'
-                ).click()  # välj timvärden
-                ts(20)
-            # klikcka på öppna i
-            driver.find_element_by_xpath(
-                '//*[@id="actions"]/form/div[1]/div[1]/div/div[1]/div/button'
-            ).click()
-            ts(5)
-            # välj öppna i excel
-            driver.find_element_by_xpath(
-                'id("actions")/form[1]/div[@class="row"]/div[@class="col-sm-12"]/div[@class="row"]/div[@class="col-sm-6 i-chart-types"]/div[@class="btn-group dropdown open"]/div[@class="dropdown-menu pull-right no-border"]/button[@class="export btn btn-outline width-100"]'
-            ).click()
+                driver = self.hourly_eon(driver)
+            driver = self.download_excel_consumption_eon(driver)
             #waits for file to download
             self._check_folder(self._downloadPath)
             #ts(60)
-            driver.find_element_by_class_name("log-out").click()
-            ts(3)
-            driver.close()
+            self.log_out_eon(driver)
         except (NoSuchElementException, InvalidElementStateException):
             try:
                 driver.find_element_by_class_name("log-out").click()
@@ -208,120 +326,20 @@ class Energi():
             startMonth = int(_tertial[0][5:])
             endMonth = int(_tertial[3][5:])
         try:
-            driver = webdriver.Firefox(
-                executable_path=self._driverPath,
-                firefox_profile=self._firefox_profile,
-                options=self._opts)
-            driver.get(self._adress)
-            ts(5)
-            elem1 = driver.find_element_by_id("UserIdField")
-            elem2 = driver.find_element_by_id("PasswordField")
-            elem1.send_keys(self._user)
-            ts(5)
-            elem2.send_keys(self._pw)
-            # logga in
-            driver.find_element_by_id("LoginButton").click()
-            ts(5)
-            # välj hultsfreds kommun
-            #driver.find_element_by_class_name('business-account-link').click() # HK och HKIAB har bytt plats därför måste css selector användas
-            order = 2
-            driver.find_element_by_css_selector(
-                f"body > form > div > div > div.modal-body > div.form-group > table > tbody > tr:nth-child({order}) > td > div > a"
-            ).click()
-            ts(3)
-            # välj ekonomi
-            driver.find_element_by_xpath(
-                '//*[@id="body"]/div[2]/div/div[2]/ul/li[4]').click()
-            ts(3)
-            # välj kostnader
-            driver.find_element_by_xpath(
-                '//*[@id="body"]/div[2]/div/div[2]/ul/li[4]/ul/li[2]/a').click(
-                )
-            ts(10)
+            driver = self.log_in_eon()
+            driver = self.choose_economics_costs_eon(driver)
             if not self._tertial:
-                # välj startmånad
-                driver.find_element_by_id('dateFrom').click()
-                ts(3)
-                driver.find_element_by_xpath(
-                    '/html/body/div[6]/div[2]/table/thead/tr/th[2]').click(
-                    )  #val av år
-                ts(3)
-                driver.find_element_by_xpath(
-                    f'/html/body/div[6]/div[3]/table/tbody/tr/td/span[{year}]'
-                ).click()  # 9=2017
-                ts(3)
-                driver.find_element_by_xpath(
-                    f'/html/body/div[6]/div[2]/table/tbody/tr/td/span[{month}]'
-                ).click()
-                ts(3)
-                # välj slutmånad
-                driver.find_element_by_id('dateTo').click()
-                ts(3)
-                driver.find_element_by_xpath(
-                    '/html/body/div[6]/div[2]/table/thead/tr/th[2]').click(
-                    )  #val av år
-                driver.find_element_by_xpath(
-                    f'/html/body/div[6]/div[3]/table/tbody/tr/td/span[{year}]'
-                ).click()  # 9=2017
-                ts(3)
-                driver.find_element_by_xpath(
-                    f'/html/body/div[6]/div[2]/table/tbody/tr/td/span[{month}]'
-                ).click()
-                ts(3)
+                driver = self.choose_start_period_eon(driver, year, month, "cost")
+                driver = self.choose_end_period_eon(driver, year, month, "cost")
             else:
                 # välj startmånad
-                driver.find_element_by_id('dateFrom').click()
-                ts(3)
-                driver.find_element_by_xpath(
-                    '/html/body/div[6]/div[2]/table/thead/tr/th[2]').click(
-                    )  #val av år
-                ts(3)
-                driver.find_element_by_xpath(
-                    f'/html/body/div[6]/div[3]/table/tbody/tr/td/span[{startYear}]'
-                ).click()  # 9=2017
-                ts(3)
-                driver.find_element_by_xpath(
-                    f'/html/body/div[6]/div[2]/table/tbody/tr/td/span[{startMonth}]'
-                ).click()
-                ts(3)
-                # välj slutmånad
-                driver.find_element_by_id('dateTo').click()
-                ts(3)
-                driver.find_element_by_xpath(
-                    '/html/body/div[6]/div[2]/table/thead/tr/th[2]').click(
-                    )  #val av år
-                driver.find_element_by_xpath(
-                    f'/html/body/div[6]/div[3]/table/tbody/tr/td/span[{endYear}]'
-                ).click()  # 9=2017
-                ts(3)
-                driver.find_element_by_xpath(
-                    f'/html/body/div[6]/div[2]/table/tbody/tr/td/span[{endMonth}]'
-                ).click()
-                ts(3)
-            # sök => applicera valda månader
-            driver.find_element_by_xpath(
-                '//*[@id="costs-filter"]/div[6]/div/button').click()
-            ts(10)
-            # välj alla fastigheter
-            driver.find_element_by_css_selector(
-                "#list-container > div.base-list > table > thead.tableFloatingHeaderOriginal > tr > th.select > label > span"
-            ).click()
-            ts(5)
-            # öpnna menyn "Öppna i..."
-            driver.find_element_by_css_selector(
-                "#list-container > div.row.base-list-toolbar > div > div > button"
-            ).click()
-            ts(5)
-            # klicka ladda ner
-            driver.find_element_by_css_selector(
-                "#list-container > div.row.base-list-toolbar > div > div > div > button.export.btn.btn-outline.width-100"
-            ).click()
+                driver = self.choose_start_period_eon(driver, startYear, endMonth, "cost")
+                driver = self.choose_end_period_eon(driver, endYear, endMonth, "cost")
+            driver = self.choose_all_download_excel_cost_eon(driver)
             # väntar på att fil laddar ner
-            Energi._check_folder(self._downloadPath)
+            self._check_folder(self._downloadPath)
             #ts(15)
-            driver.find_element_by_class_name("log-out").click()
-            ts(3)
-            driver.close()
+            self.log_out_eon(driver)
         except (NoSuchElementException, InvalidElementStateException):
             try:
                 driver.find_element_by_class_name("log-out").click()
@@ -330,6 +348,36 @@ class Energi():
                 pass
             driver.close()
             raise
+
+    def login_los(self):
+        driver = webdriver.Firefox(
+            executable_path=self._driverPath,
+            firefox_profile=self._firefox_profile,
+            options=self._opts,
+        )
+        driver.get(self._adress)
+        ts(5)
+        elem1 = driver.find_element_by_id("Login1_username")
+        elem2 = driver.find_element_by_id("Login1_password")
+        elem1.send_keys(self._user)
+        ts(3)
+        elem2.send_keys(self._pw)
+        # logga in
+        driver.find_element_by_id("Login1_LoginButton").click()
+        ts(15)
+        return driver
+
+    @staticmethod
+    def logout_los(driver):
+        """[summary]
+        
+        :param driver: [description]
+        :type driver: [type]
+        """
+        driver.find_element_by_xpath(
+            '/html/body/form/div[4]/header/div/div/ul/li[2]/div/div/a[1]').click()
+        ts(5)
+        driver.close()
 
     def los_cost(self):
         """Downloads costs from los
@@ -344,20 +392,7 @@ class Energi():
             from_ = str(self.year) + '-' + str(self.month)
             to = str(self.year) + '-' + str(self.month)
         try:
-            driver = webdriver.Firefox(
-                executable_path=self._driverPath,
-                firefox_profile=self._firefox_profile,
-                options=self._opts)
-            driver.get(self._adress)
-            ts(5)
-            elem1 = driver.find_element_by_id("Login1_UserName")
-            elem2 = driver.find_element_by_id("Login1_Password")
-            elem1.send_keys(self._user)
-            ts(3)
-            elem2.send_keys(self._pw)
-            # logga in
-            driver.find_element_by_id("Login1_LoginButton").click()
-            ts(15)
+            driver = self.login_los()
             # ange start slut period
             start = driver.find_element_by_id("txtFrom")
             end = driver.find_element_by_id("txtTo")
@@ -377,14 +412,9 @@ class Energi():
             self._check_folder(self._downloadPath)
             #ts(5)
             # logga ut
-            driver.find_element_by_xpath(
-                '//*[@id="leftmenu"]/ul/li[8]/a').click()
-            ts(5)
-            driver.close()
+            self.logout_los(driver)            
         except Exception as exc:
-            driver.find_element_by_xpath(
-                '//*[@id="leftmenu"]/ul/li[8]/a').click()
-            driver.close()
+            self.logout_los(driver)
             print(exc)
             raise
 
@@ -572,28 +602,7 @@ class Energi():
 
         """
         try:
-            driver = webdriver.Firefox(
-                executable_path=self._driverPath,
-                firefox_profile=self._firefox_profile,
-                options=self._opts)
-            driver.get(self._adress)
-            ts(5)
-            #time.sleep(2)
-            elem1 = driver.find_element_by_id("UserIdField")
-            elem2 = driver.find_element_by_id("PasswordField")
-            elem1.send_keys(self._user)
-            ts(5)
-            elem2.send_keys(self._pw)
-            # logga in
-            driver.find_element_by_id("LoginButton").click()
-            ts(5)
-            # välj hultsfreds kommun
-            #driver.find_element_by_class_name('business-account-link').click() # HK och HKIAB har bytt plats därför måste css selector användas
-            order = 2
-            driver.find_element_by_css_selector(
-                f"body > form > div > div > div.modal-body > div.form-group > table > tbody > tr:nth-child({order}) > td > div > a"
-            ).click()
-            ts(3)
+            driver = self.log_in_eon()
             # välj Energikarta
             driver.find_element_by_xpath(
                 '//*[@id="body"]/div[2]/div/div[2]/ul/li[2]').click()
