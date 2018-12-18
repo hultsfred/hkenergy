@@ -333,7 +333,7 @@ class Energi():
                 driver = self.choose_end_period_eon(driver, year, month, "cost")
             else:
                 # välj startmånad
-                driver = self.choose_start_period_eon(driver, startYear, endMonth, "cost")
+                driver = self.choose_start_period_eon(driver, startYear, startMonth, "cost")
                 driver = self.choose_end_period_eon(driver, endYear, endMonth, "cost")
             driver = self.choose_all_download_excel_cost_eon(driver)
             # väntar på att fil laddar ner
@@ -592,6 +592,7 @@ class Energi():
             ],
             var_name='Typ',
             value_name='Kostnad')
+        #print(eon_cost)
         eon_cost = eon_cost[pd.notnull(eon_cost['Kostnad'])]
         eon_cost = eon_cost.where(pd.notnull(eon_cost), None)
         data = [tuple(i) for i in eon_cost.values.tolist()]
