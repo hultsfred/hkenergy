@@ -19,3 +19,4 @@ _test*
 *.ipynb
 consumption_eon_main_multiple_periods.py
 *.bat
+consumption_neova.py

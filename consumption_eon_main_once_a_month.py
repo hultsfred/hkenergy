@@ -57,25 +57,25 @@ def main():
         )
         en.eon_consumption(hourly=True)
         data = en.eon_consumption_transform()
-        # print(en.period)
-        # en.db_delete_records(
-        #    server=SERVER,
-        #    database=DB,
-        #    table=TABLE_CONSUMPTION_HOURLY,
-        #    user=USER_DB,
-        #    password=PW_DB,
-        #    whereClause=f"""YEAR(DATEADD(hh, -1,Timestamp)) = {en.year}
-        #                    AND MONTH(DATEADD(hh, -1,Timestamp)) = {en.month}""",
-        # )
-        # en.db_insert(
-        #    data=data,
-        #    server=SERVER,
-        #    db=DB,
-        #    table=TABLE_CONSUMPTION_HOURLY,
-        #    user=USER_DB,
-        #    pw=PW_DB,
-        #    truncate=TRUNCATE,
-        # )
+        print(en.period)
+        en.db_delete_records(
+           server=SERVER,
+           database=DB,
+           table=TABLE_CONSUMPTION_HOURLY,
+           user=USER_DB,
+           password=PW_DB,
+           whereClause=f"""YEAR(DATEADD(hh, -1,Timestamp)) = {en.year}
+                           AND MONTH(DATEADD(hh, -1,Timestamp)) = {en.month}""",
+        )
+        en.db_insert(
+           data=data,
+           server=SERVER,
+           db=DB,
+           table=TABLE_CONSUMPTION_HOURLY,
+           user=USER_DB,
+           pw=PW_DB,
+           truncate=TRUNCATE,
+        )
         en.clean_folder(destinationFolder=FOLDER2)
     except Exception:
         if SENDMAIL:
