@@ -1,1 +1,0 @@
-C:\ProgramData\Miniconda3\envs\energi\python.exe F:\Projekt\energi\cost_eon_main.py

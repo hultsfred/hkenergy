@@ -1,1 +1,0 @@
-C:\ProgramData\Miniconda3\envs\energi\python.exe F:\Projekt\energi\consumption_eon_main_once_a_month.py
