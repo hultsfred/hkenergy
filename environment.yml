@@ -1,12 +1,18 @@
 name: energi
 
+channels:
+  - conda-forge
+  - defaults
+
 dependencies:
-  - python=3.6
+  - python=3.7
   - pandas
-  - pylint
+  - pylint # dev
+  - ipykernel # dev
+  - selenium
+  - pendulum
+  - pymssql
+  - xlrd
   - pip:
-    - selenium
-    - pendulum
-    - ./wheels-to-install/hkfunctions-0.6.1-py3-none-any.whl
-    - ./wheels-to-install/pymssql-2.1.3-cp36-cp36m-win_amd64.whl
+    - https://github.com/hultsfred/hkfunctions/archive/master.zip
 

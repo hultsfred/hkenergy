@@ -13,7 +13,7 @@ from selenium.common.exceptions import (
 from selenium.webdriver.common.keys import Keys
 import time
 import pandas as pd
-from hkfunctions.api import mssql_insert
+from hkfunctions.sqlserver import insert as mssql_insert
 from energi._eon_info import years
 from typing import Union, List, Tuple, Any, Optional, Dict
 ts = time.sleep
