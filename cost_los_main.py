@@ -21,7 +21,7 @@ import pymssql
 PW_DB = Fernet(KEY_DB).decrypt(PASSWORD_DB).decode("utf8")
 PW_LOS = Fernet(KEY).decrypt(PASSWORD_LOS).decode("utf8")
 
-YEAR = pendulum.now().subtract(days=2).year
+YEAR = pendulum.now().subtract(months=1).year
 MONTH = pendulum.now().subtract(months=1).month
 FOLDER = "data_cost"
 FOLDER2 = "data_cost_old"
