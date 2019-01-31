@@ -7,8 +7,8 @@ channels:
 dependencies:
   - python=3.6
   - pandas
-  - pylint # dev
-  - ipykernel # dev
+  #- pylint # dev
+  #- ipykernel # dev
   - selenium
   - pendulum
   - pymssql
