@@ -95,6 +95,8 @@ class Energi:
         ts(5)
         return driver
 
+    
+
     @staticmethod
     def choose_start_period_eon(driver, year, month, calling_function) -> None:
         """[summary]
@@ -109,15 +111,15 @@ class Energi:
         driver.find_element_by_id(_id).click()  # val av start period
         ts(5)
         driver.find_element_by_xpath(
-            "/html/body/div[7]/div[2]/table/thead/tr/th[2]"
+            "/html/body/div[5]/div[2]/table/thead/tr/th[2]"
         ).click()  # val av år
         ts(5)
         driver.find_element_by_xpath(
-            f"/html/body/div[7]/div[3]/table/tbody/tr/td/span[{year}]"
+            f"/html/body/div[5]/div[3]/table/tbody/tr/td/span[{year}]"
         ).click()  # 9=2017
         ts(3)
         driver.find_element_by_xpath(
-            f"/html/body/div[7]/div[2]/table/tbody/tr/td/span[{month}]"
+            f"/html/body/div[5]/div[2]/table/tbody/tr/td/span[{month}]"
         ).click()  # val av månad 11=nov
         return driver
 
@@ -136,20 +138,19 @@ class Energi:
             _id = "period-to-month"
         elif calling_function == "cost":
             _id = "dateTo"
-        driver.find_element_by_id(_id).click()  # val av tom perid
-        ts(3)
+        driver.find_element_by_id(_id).click()  # val av start period
+        ts(5)
         driver.find_element_by_xpath(
-            "/html/body/div[7]/div[2]/table/thead/tr/th[2]"
+            "/html/body/div[5]/div[2]/table/thead/tr/th[2]"
         ).click()  # val av år
-        ts(3)
+        ts(5)
         driver.find_element_by_xpath(
-            f"/html/body/div[7]/div[3]/table/tbody/tr/td/span[{year}]"
+            f"/html/body/div[5]/div[3]/table/tbody/tr/td/span[{year}]"
         ).click()  # 9=2017
         ts(3)
         driver.find_element_by_xpath(
-            f"/html/body/div[7]/div[2]/table/tbody/tr/td/span[{month}]"
+            f"/html/body/div[5]/div[2]/table/tbody/tr/td/span[{month}]"
         ).click()  # val av månad 11=nov
-        ts(5)
         if calling_function == "cost":
             # sök => applicera valda månader
             driver.find_element_by_xpath(
@@ -203,7 +204,7 @@ class Energi:
         ts(5)
         # applicera förändringarna
         driver.find_element_by_css_selector("#apply-changes").click()
-        ts(10)
+        ts(20)
         return driver
 
     @staticmethod
@@ -514,8 +515,9 @@ class Energi:
                 f"The folder {self._downloadPath} is empty. Is there an error when downloading the file?"
             )
         cols_eon = pd.read_excel(_file, header=12).columns.tolist()
+        cols_eon = cols_eon[1:]
         cols_eon[0] = "Timestamp"
-        data_eon = pd.read_excel(_file, skiprows=17, header=None)
+        data_eon = pd.read_excel(_file, skiprows=19, header=None)
         data_eon = data_eon.drop(0, 1)  # tar bort tom kolumn
         data_eon.columns = cols_eon
         data_eon = data_eon.dropna(axis=1, how="all")
