@@ -109,17 +109,17 @@ class Energi:
         elif calling_function == "cost":
             _id = "dateFrom"
         driver.find_element_by_id(_id).click()  # val av start period
-        ts(5)
+        ts(3)
         driver.find_element_by_xpath(
-            "/html/body/div[5]/div[2]/table/thead/tr/th[2]"
+            "/html/body/div[7]/div[2]/table/thead/tr/th[2]"
         ).click()  # val av år
-        ts(5)
+        ts(3)
         driver.find_element_by_xpath(
-            f"/html/body/div[5]/div[3]/table/tbody/tr/td/span[{year}]"
+            f"/html/body/div[7]/div[3]/table/tbody/tr/td/span[{year}]"
         ).click()  # 9=2017
         ts(3)
         driver.find_element_by_xpath(
-            f"/html/body/div[5]/div[2]/table/tbody/tr/td/span[{month}]"
+            f"/html/body/div[7]/div[2]/table/tbody/tr/td/span[{month}]"
         ).click()  # val av månad 11=nov
         return driver
 
@@ -139,17 +139,17 @@ class Energi:
         elif calling_function == "cost":
             _id = "dateTo"
         driver.find_element_by_id(_id).click()  # val av start period
-        ts(5)
+        ts(3)
         driver.find_element_by_xpath(
-            "/html/body/div[5]/div[2]/table/thead/tr/th[2]"
+            "/html/body/div[7]/div[2]/table/thead/tr/th[2]"
         ).click()  # val av år
-        ts(5)
+        ts(3)
         driver.find_element_by_xpath(
-            f"/html/body/div[5]/div[3]/table/tbody/tr/td/span[{year}]"
+            f"/html/body/div[7]/div[3]/table/tbody/tr/td/span[{year}]"
         ).click()  # 9=2017
         ts(3)
         driver.find_element_by_xpath(
-            f"/html/body/div[5]/div[2]/table/tbody/tr/td/span[{month}]"
+            f"/html/body/div[7]/div[2]/table/tbody/tr/td/span[{month}]"
         ).click()  # val av månad 11=nov
         if calling_function == "cost":
             # sök => applicera valda månader
@@ -204,7 +204,7 @@ class Energi:
         ts(5)
         # applicera förändringarna
         driver.find_element_by_css_selector("#apply-changes").click()
-        ts(20)
+        ts(7)
         return driver
 
     @staticmethod
@@ -307,12 +307,12 @@ class Energi:
                 driver = self.choose_company_eon(driver)
             except NoSuchElementException:
                 pass
-            try:
-                driver = self.eon_choose_parameters(driver=driver, year=year, month=month, hourly=hourly)
-            except ElementClickInterceptedException:
-                driver.find_element_by_xpath('//*[@id="close"]').click()
-                ts(5)
-                driver = self.eon_choose_parameters(driver=driver, year=year, month=month, hourly=hourly)
+            driver = self.choose_analysis_all_facilities(driver)
+            driver = self.choose_start_period_eon(driver, year, month, "consumption")
+            driver = self.choose_end_period_eon(driver, year, month, "consumption")
+            driver = self.choose_compare_consumption_eon(driver)
+            if hourly:
+                driver = self.hourly_eon(driver)
             driver = self.download_excel_consumption_eon(driver)
             # waits for file to download
             self._check_folder(self._downloadPath)
@@ -320,7 +320,7 @@ class Energi:
             self.log_out_eon(driver)
         except (NoSuchElementException, InvalidElementStateException):
             try:
-                driver.find_element_by_xpath("log-out").click()
+                driver.find_element_by_class_name("log-out").click()
             except (
                 NoSuchElementException,
                 InvalidElementStateException,
@@ -329,23 +329,6 @@ class Energi:
                 pass
             driver.close()
             raise
-
-
-    def eon_choose_parameters(self, driver, year, month,hourly:bool = False):
-        """[summary]
-        
-        :param hourly: [description], defaults to False
-        :param hourly: bool, optional
-        """
-        driver = self.choose_analysis_all_facilities(driver)
-        driver = self.choose_start_period_eon(driver, year, month, "consumption")
-        driver = self.choose_end_period_eon(driver, year, month, "consumption")
-        driver = self.choose_compare_consumption_eon(driver)
-        if hourly:
-            driver = self.hourly_eon(driver)
-        return driver
-
-
 
     def eon_cost(self):
         """downloads file with costs from eon

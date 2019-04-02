@@ -1,4 +1,4 @@
 """config file
 """
-HEADLESS = True
+HEADLESS = False
 SENDMAIL = True
