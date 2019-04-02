@@ -307,12 +307,12 @@ class Energi:
                 driver = self.choose_company_eon(driver)
             except NoSuchElementException:
                 pass
-            driver = self.choose_analysis_all_facilities(driver)
-            driver = self.choose_start_period_eon(driver, year, month, "consumption")
-            driver = self.choose_end_period_eon(driver, year, month, "consumption")
-            driver = self.choose_compare_consumption_eon(driver)
-            if hourly:
-                driver = self.hourly_eon(driver)
+            try:
+                driver = self.eon_choose_parameters(driver=driver, year=year, month=month, hourly=hourly)
+            except ElementClickInterceptedException:
+                driver.find_element_by_id("close").click()
+                ts(5)
+                driver = self.eon_choose_parameters(driver=driver, year=year, month=month, hourly=hourly)
             driver = self.download_excel_consumption_eon(driver)
             # waits for file to download
             self._check_folder(self._downloadPath)
@@ -329,6 +329,23 @@ class Energi:
                 pass
             driver.close()
             raise
+
+
+    def eon_choose_parameters(self, driver, year, month,hourly:bool = False):
+        """[summary]
+        
+        :param hourly: [description], defaults to False
+        :param hourly: bool, optional
+        """
+        driver = self.choose_analysis_all_facilities(driver)
+        driver = self.choose_start_period_eon(driver, year, month, "consumption")
+        driver = self.choose_end_period_eon(driver, year, month, "consumption")
+        driver = self.choose_compare_consumption_eon(driver)
+        if hourly:
+            driver = self.hourly_eon(driver)
+        return driver
+
+
 
     def eon_cost(self):
         """downloads file with costs from eon
