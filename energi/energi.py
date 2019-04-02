@@ -310,7 +310,7 @@ class Energi:
             try:
                 driver = self.eon_choose_parameters(driver=driver, year=year, month=month, hourly=hourly)
             except ElementClickInterceptedException:
-                driver.find_element_by_id("close").click()
+                driver.find_element_by_xpath('//*[@id="close"]').click()
                 ts(5)
                 driver = self.eon_choose_parameters(driver=driver, year=year, month=month, hourly=hourly)
             driver = self.download_excel_consumption_eon(driver)
@@ -320,7 +320,7 @@ class Energi:
             self.log_out_eon(driver)
         except (NoSuchElementException, InvalidElementStateException):
             try:
-                driver.find_element_by_class_name("log-out").click()
+                driver.find_element_by_xpath("log-out").click()
             except (
                 NoSuchElementException,
                 InvalidElementStateException,
