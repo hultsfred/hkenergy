@@ -318,7 +318,7 @@ class Energi:
             self._check_folder(self._downloadPath)
             # ts(60)
             self.log_out_eon(driver)
-        except (NoSuchElementException, InvalidElementStateException):
+        except (NoSuchElementException, InvalidElementStateException, ElementClickInterceptedException):
             try:
                 driver.find_element_by_class_name("log-out").click()
             except (
@@ -363,7 +363,7 @@ class Energi:
             self._check_folder(self._downloadPath)
             # ts(15)
             self.log_out_eon(driver)
-        except (NoSuchElementException, InvalidElementStateException):
+        except (NoSuchElementException, InvalidElementStateException, ElementClickInterceptedException):
             try:
                 driver.find_element_by_class_name("log-out").click()
             except (
@@ -515,7 +515,7 @@ class Energi:
                 f"The folder {self._downloadPath} is empty. Is there an error when downloading the file?"
             )
         cols_eon = pd.read_excel(_file, header=12).columns.tolist()
-        cols_eon = cols_eon[1:]
+        #cols_eon = cols_eon[1:]
         cols_eon[0] = "Timestamp"
         data_eon = pd.read_excel(_file, skiprows=19, header=None)
         data_eon = data_eon.drop(0, 1)  # tar bort tom kolumn
