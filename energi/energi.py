@@ -110,16 +110,16 @@ class Energi:
             _id = "dateFrom"
         driver.find_element_by_id(_id).click()  # val av start period
         ts(3)
-        driver.find_element_by_xpath(
-            "/html/body/div[7]/div[2]/table/thead/tr/th[2]"
-        ).click()  # val av år
+        driver.find_element_by_id("period-from-month").click()
+        ts(3)
+        driver.find_element_by_xpath("/html/body/div[5]/div[2]/table/thead/tr/th[2]").click()
         ts(3)
         driver.find_element_by_xpath(
-            f"/html/body/div[7]/div[3]/table/tbody/tr/td/span[{year}]"
+            f"/html/body/div[5]/div[3]/table/tbody/tr/td/span[{year}]"
         ).click()  # 9=2017
         ts(3)
         driver.find_element_by_xpath(
-            f"/html/body/div[7]/div[2]/table/tbody/tr/td/span[{month}]"
+            f"/html/body/div[5]/div[2]/table/tbody/tr/td/span[{month}]"
         ).click()  # val av månad 11=nov
         return driver
 
@@ -140,16 +140,17 @@ class Energi:
             _id = "dateTo"
         driver.find_element_by_id(_id).click()  # val av start period
         ts(3)
-        driver.find_element_by_xpath(
-            "/html/body/div[7]/div[2]/table/thead/tr/th[2]"
-        ).click()  # val av år
+        driver.find_element_by_id("period-to-month").click
+        #//*[@id="period-from-month"]
+        ts(3)
+        driver.find_element_by_xpath("/html/body/div[5]/div[2]/table/thead/tr/th[2]").click()
         ts(3)
         driver.find_element_by_xpath(
-            f"/html/body/div[7]/div[3]/table/tbody/tr/td/span[{year}]"
+            f"/html/body/div[5]/div[3]/table/tbody/tr/td/span[{year}]"
         ).click()  # 9=2017
         ts(3)
         driver.find_element_by_xpath(
-            f"/html/body/div[7]/div[2]/table/tbody/tr/td/span[{month}]"
+            f"/html/body/div[5]/div[2]/table/tbody/tr/td/span[{month}]"
         ).click()  # val av månad 11=nov
         if calling_function == "cost":
             # sök => applicera valda månader
@@ -320,14 +321,14 @@ class Energi:
             self.log_out_eon(driver)
         except (NoSuchElementException, InvalidElementStateException, ElementClickInterceptedException):
             try:
-                driver.find_element_by_class_name("log-out").click()
+                driver.find_element_by_class_name("log-out")#.click()
             except (
                 NoSuchElementException,
                 InvalidElementStateException,
                 ElementClickInterceptedException,
             ):
                 pass
-            driver.close()
+            #driver.close()
             raise
 
     def eon_cost(self):
